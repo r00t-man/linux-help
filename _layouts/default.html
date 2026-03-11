@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: "en-US" }}">
+  <head>
+    <meta charset="UTF-8">
+    <title>{{ page.title | default: site.title }}</title>
+    <meta name="description" content="{{ page.description | default: site.description }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- PrismJS CSS для подсветки -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+
+    <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+    <style>
+      body {
+        background-color: #2e2e2e;
+        color: #e0e0e0;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      .page-header {
+        background-color: #1f1f1f;
+        padding: 20px 0;
+        text-align: center;
+      }
+
+      .project-name, .project-tagline {
+        color: #ffffff;
+        margin: 0;
+      }
+
+      .top-nav ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        text-align: center;
+      }
+      .top-nav ul li {
+        display: inline-block;
+        position: relative;
+        margin: 0 10px;
+      }
+      .top-nav ul li a,
+      .top-nav ul li span {
+        text-decoration: none;
+        padding: 8px 14px;
+        display: inline-block;
+        font-weight: bold;
+        color: #ffffff;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+      }
+      .top-nav ul li:hover > a,
+      .top-nav ul li:hover > span {
+        background: rgba(255,255,255,0.1);
+        box-shadow: 0 0 10px rgba(102,204,255,0.7);
+      }
+
+      .top-nav ul li ul.dropdown {
+        display: none;
+        position: absolute;
+        background-color: #2a2a2a;
+        padding: 0;
+        margin: 0;
+        border-radius: 6px;
+        min-width: 180px;
+        z-index: 999;
+        text-align: left;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      }
+      .top-nav ul li:hover ul.dropdown {
+        display: block;
+      }
+      .top-nav ul li ul.dropdown li {
+        display: block;
+        margin: 0;
+      }
+      .top-nav ul li ul.dropdown li a {
+        display: block;
+        padding: 10px 14px;
+        color: #ffffff;
+        transition: all 0.3s ease;
+      }
+      .top-nav ul li ul.dropdown li a:hover {
+        background: rgba(255,255,255,0.1);
+        box-shadow: inset 0 0 8px rgba(102,204,255,0.6);
+      }
+
+      .main-content {
+        padding: 20px;
+      }
+
+      a {
+        color: #66ccff;
+        transition: all 0.3s ease;
+      }
+      a:hover {
+        color: #99ddff;
+        text-shadow: 0 0 8px #66ccff;
+      }
+
+      .site-footer {
+        text-align: center;
+        padding: 20px;
+        background-color: #1f1f1f;
+        color: #aaa;
+        font-size: 0.9em;
+      }
+
+      pre[class*="language-"], code[class*="language-"] {
+        background-color: #121212 !important;
+        color: #ffffff !important;
+        font-family: "Fira Code", monospace;
+        font-size: 0.95em;
+        line-height: 1.5;
+        border-radius: 8px;
+        padding: 12px 16px;
+        overflow-x: auto;
+      }
+
+      .token.option {
+        color: #66ccff !important;
+        font-weight: bold;
+      }
+      .token.comment { color: #888888 !important; }
+      .token.keyword { color: #ffffff !important; }
+      .token.string { color: #99ff99 !important; }
+      .token.operator { color: #ffcc66 !important; }
+      .token.number { color: #ff9999 !important; }
+      .token.function { color: #ffffff !important; }
+
+      /* Две колонки для содержания */
+      .two-columns {
+        column-count: 2;
+        column-gap: 40px;
+      }
+      .two-columns h3 {
+        break-inside: avoid;
+      }
+      .two-columns ol, .two-columns ul {
+        padding-left: 20px;
+      }
+
+      /* Адаптивность для мобильных */
+      @media (max-width: 900px) {
+        .two-columns {
+          column-count: 1;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <header class="page-header" role="banner">
+      <h1 class="project-name">{{ site.title }}</h1>
+      <h2 class="project-tagline">{{ site.description }}</h2>
+
+      <p id="last-update" style="color:#ccc; font-size:0.9em;">Загрузка даты обновления...</p>
+
+      <script>
+      fetch("https://api.github.com/repos/soulpastwk/linux-help/commits?path=index.md&page=1&per_page=1")
+        .then(response => response.json())
+        .then(data => {
+          if (data && data.length > 0) {
+            const commitDate = new Date(data[0].commit.author.date);
+            const formattedDate = commitDate.toLocaleString("ru-RU", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit"
+            }).replace(',', ' в');
+            document.getElementById("last-update").textContent =
+              `Материал сайта обновлён: ${formattedDate}`;
+          } else {
+            document.getElementById("last-update").textContent = "Дата обновления недоступна";
+          }
+        })
+        .catch(err => {
+          document.getElementById("last-update").textContent = "Ошибка получения даты обновления";
+          console.error(err);
+        });
+      </script>
+
+      <nav class="top-nav">
+        <ul>
+          {% for item in site.nav %}
+            <li>
+              {% if item.children %}
+                <span>{{ item.name }}</span>
+                <ul class="dropdown">
+                  {% for child in item.children %}
+                    <li><a href="{{ child.link | relative_url }}">{{ child.name }}</a></li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <a href="{{ item.link | relative_url }}">{{ item.name }}</a>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </nav>
+    </header>
+
+    <main id="content" class="main-content" role="main">
+      {{ content }}
+
+      <footer class="site-footer">
+        <span class="site-footer-credits">
+          Сайт создан при помощи <a href="https://pages.github.com/">GitHub Pages</a> специально для ГИС =]
+        </span>
+      </footer>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/prism.min.js"></script>
+    <script>
+      Prism.languages.bash = Prism.languages.extend('bash', {
+        'option': {
+          pattern: /--?[a-zA-Z0-9-]+/,
+          alias: 'option'
+        }
+      });
+    </script>
+  </body>
+</html>
