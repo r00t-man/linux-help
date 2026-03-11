@@ -5,7 +5,7 @@ permalink: /01_ntp/
 ---
 
 
-# ⏱ Настройка NTP и часового пояса на Astra Linux и РЕД ОС
+# ⏱ Настройка NTP и часового пояса на Astra Linux и РЕД ОС 
 
 [![Platform](https://img.shields.io/badge/platform-Linux-lightgrey?style=flat-square&logo=linux)]()
 [![Tested on](https://img.shields.io/badge/tested%20on-R%C4%80D%20OS%207.3%20|%208.0%20|%20Astra%20SE%201.7.5%20|%201.8-orange?style=flat-square)]()
