@@ -101,12 +101,15 @@ nav:
         link: "/unlock_user_astra"
   - name: "📎 Доп - Инфо"
     children:
-      - name: "Раздел подготовлен под перенос статей my-wiki"
-        link: "/"
+      - name: "Разблокировка администратора"
+        link: "/unlock_admin_astra"
+      - name: "Разблокировка пользователя PAM"
+        link: "/unlock_user_astra"
+      - name: "Определение PAM-блокировок"
+        link: "/02_pam_unlock"
   - name: "🖴 Управление дисками"
     children:
       - name: "Создание разделов"
         link: "/25_Disks_Partitioning"
       - name: "LVM в Linux"
         link: "/25_LVM"
-

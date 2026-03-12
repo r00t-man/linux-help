@@ -97,7 +97,11 @@
 </ol>
 
 <h3>📎 Доп - Инфо</h3>
-<p>Раздел добавлен для переноса статей из <code>my-wiki</code> (кроме <code>Audit-history.md</code>).</p>
+<ol start="33">
+  <li><a href="unlock_admin_astra">Разблокировка администратора в Astra Linux</a></li>
+  <li><a href="unlock_user_astra">Разблокировка пользователя в Astra Linux</a></li>
+  <li><a href="02_pam_unlock">Определение и безопасное отключение PAM-блокировок</a></li>
+</ol>
 
 <h3>🖴 Управление дисками</h3>
 <ol start="28">
