@@ -67,7 +67,7 @@ nav:
         link: "/20_network-port-check"
   - name: "⚙️ Логи/история - автоматизация"
     children:
-      - name: "История команд"
+      - name: "Аудит истории команд"
         link: "/09_shell_history"
       - name: "Ротация логов"
         link: "/23_log-rotation-native-only"
