@@ -159,10 +159,14 @@
       <p id="last-update" style="color:#ccc; font-size:0.9em;">Загрузка даты обновления...</p>
 
       <script>
-      fetch("https://api.github.com/repos/soulpastwk/linux-help/commits?path=index.md&page=1&per_page=1")
+      const repo = "{{ site.github.repository_nwo | default: 'r00t-man/linux-help' }}";
+      const targetPath = "index.md";
+      const apiUrl = `https://api.github.com/repos/${repo}/commits?path=${encodeURIComponent(targetPath)}&page=1&per_page=1`;
+
+      fetch(apiUrl)
         .then(response => response.json())
         .then(data => {
-          if (data && data.length > 0) {
+          if (Array.isArray(data) && data.length > 0) {
             const commitDate = new Date(data[0].commit.author.date);
             const formattedDate = commitDate.toLocaleString("ru-RU", {
               day: "2-digit",
@@ -172,13 +176,15 @@
               minute: "2-digit"
             }).replace(',', ' в');
             document.getElementById("last-update").textContent =
-              `Материал сайта обновлён: ${formattedDate}`;
+              `Материал сайта обновлён по файлу ${targetPath}: ${formattedDate}`;
           } else {
-            document.getElementById("last-update").textContent = "Дата обновления недоступна";
+            document.getElementById("last-update").textContent =
+              "Дата обновления недоступна (не удалось получить коммит index.md)";
           }
         })
         .catch(err => {
-          document.getElementById("last-update").textContent = "Ошибка получения даты обновления";
+          document.getElementById("last-update").textContent =
+            "Ошибка получения даты обновления";
           console.error(err);
         });
       </script>
