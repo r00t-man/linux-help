@@ -1,3 +1,9 @@
+---
+layout: default
+title: "Балансировка в Remna (injectHosts + balancers)"
+permalink: /remna-balancing/
+---
+
 # ⚖️ Балансировка в Remna (injectHosts + balancers)
 
 Эта статья — практический разбор балансировки трафика в **Remnawave/Remnanode** на базе Xray-логики: как использовать `injectHosts`, `tagPrefix`, `routing.balancers`, `fallbackTag` и когда выбирать `leastLoad`, `leastPing` или `roundRobin`.

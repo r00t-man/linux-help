@@ -31,6 +31,14 @@ nav:
         link: "/15_find_file"
       - name: "Автопередача файлов через rsync + SSH"
         link: "/rsync-ssh-auto-transfer"
+  - name: "🆕 Новые статьи"
+    children:
+      - name: "Базовые команды Ubuntu 24 для VPN-ноды"
+        link: "/ubuntu24-vpn-node-quickstart"
+      - name: "Балансировка в Remna"
+        link: "/remna-balancing"
+      - name: "Правила маршрутизации Remna"
+        link: "/remna-routing-rules"
   - name: "📊 Мониторинг"
     children:
       - name: "Мониторинг Linux"
