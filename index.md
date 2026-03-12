@@ -71,7 +71,7 @@
 
 <h3>⚙️ История/логи и автоматизация</h3>
 <ol start="20">
-  <li><a href="09_shell_history">История команд (прокачиваем history)</a></li>
+  <li><a href="09_shell_history">Аудит истории команд (Bash/journald/rsyslog)</a></li>
   <li><a href="23_log-rotation-native-only">Ротация логов встроенными средствами</a></li>
   <li><a href="23_1_journalctl-audit-check">Проверка аудита журнала и контроля состояния journald</a></li>
   <li><a href="cron-guide">Планировщик Cron</a></li>
