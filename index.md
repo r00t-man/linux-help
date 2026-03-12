@@ -40,11 +40,13 @@
   <li><a href="13_file_operation">Операции с файлами</a></li>
   <li><a href="14_dir_operation">Операции с директориями</a></li>
   <li><a href="15_find_file">Поиск и просмотр файлов</a></li>
+  <li><a href="rsync-ssh-auto-transfer">Автоматическая передача файлов между серверами через rsync и SSH</a></li>
 </ol>
 
 <h3>📊 Мониторинг и информация о системе</h3>
-<ol start="10">
+<ol start="11">
   <li><a href="05_monitoring">Мониторинг и отладка Linux (top, htop, dstat, journalctl)</a></li>
+  <li><a href="beszel-quick-start">Мониторинг Beszel — быстрый старт</a></li>
   <li><a href="06_sysinfo">Инфо о системе</a></li>
   <li><a href="06_01_system-audit">Инфо о системе - подробно</a></li>
 </ol>
@@ -83,6 +85,19 @@
   <li><a href="21_2_journalctl-remote">Journalctl — Часть 3: Централизованный сбор журналов</a></li>
   <li><a href="22_rsyslog-guide">Руководство по rsyslog</a></li>
 </ol>
+
+
+<h3>🛡️ Безопасность сервера (раздел info)</h3>
+<ol start="28">
+  <li><a href="12_permissions">Управление правами доступа (chmod, chown, umask, ACL)</a></li>
+  <li><a href="23_1_journalctl-audit-check">Проверка аудита журнала и контроля состояния journald</a></li>
+  <li><a href="unlock_admin_astra">Разблокировка администратора Astra - ПРОВЕРЕННО</a></li>
+  <li><a href="unlock_user_astra">Разблокировка пользователя в Astra Linux</a></li>
+  <li><a href="02_pam_unlock">Определение PAM-блокировок</a></li>
+</ol>
+
+<h3>📎 Доп - Инфо</h3>
+<p>Раздел добавлен для переноса статей из <code>my-wiki</code> (кроме <code>Audit-history.md</code>).</p>
 
 <h3>🖴 Управление дисками</h3>
 <ol start="28">
