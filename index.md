@@ -43,6 +43,13 @@
   <li><a href="rsync-ssh-auto-transfer">Автоматическая передача файлов между серверами через rsync и SSH</a></li>
 </ol>
 
+<h3>🆕 Новые статьи</h3>
+<ol start="1">
+  <li><a href="/ubuntu24-vpn-node-quickstart/">Базовые команды Ubuntu 24 для подготовки VPN-ноды</a></li>
+  <li><a href="/remna-balancing/">Балансировка в Remna (injectHosts + balancers)</a></li>
+  <li><a href="/remna-routing-rules/">Правила маршрутизации Remna</a></li>
+</ol>
+
 <h3>📊 Мониторинг и информация о системе</h3>
 <ol start="11">
   <li><a href="05_monitoring">Мониторинг и отладка Linux (top, htop, dstat, journalctl)</a></li>
