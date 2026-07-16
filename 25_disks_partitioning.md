@@ -1,15 +1,8 @@
 ---
 layout: default
-title: "Работа с новыми дисками и создание разделов в Linux (fdisk, parted)"
-permalink: /25_Disks_Partitioning/
+title: "Создание разделов"
+permalink: /25_disks_partitioning/
 ---
-
-[![Linux](https://img.shields.io/badge/Platform-Linux-blue?style=flat-square&logo=linux)]()
-[![Debian](https://img.shields.io/badge/Tested%20on-Astra%20Linux%20%7C%20RedOS%20%7C%20Ubuntu-orange?style=flat-square&logo=debian)]()
-[![Storage](https://img.shields.io/badge/Storage-Disk%20Partitioning-lightgrey?style=flat-square&logo=database)]()
-[![CLI](https://img.shields.io/badge/Interface-Console-success?style=flat-square&logo=gnu-bash)]()
-[![Filesystem](https://img.shields.io/badge/FS-ext4%20%7C%20xfs%20%7C%20btrfs-blue?style=flat-square&logo=files)]()
-[![Reliability](https://img.shields.io/badge/Reliability-Stable-success?style=flat-square&logo=securityscorecard)]()
 
 # 💽 Работа с новыми дисками и создание разделов в Linux (fdisk, parted)
 
@@ -59,7 +52,7 @@ permalink: /25_Disks_Partitioning/
 
 ```bash
 lsblk
-````
+```
 
 **Пример вывода:**
 
@@ -150,9 +143,12 @@ sudo parted /dev/sda
 | Команда                       | Назначение                                               |
 | ----------------------------- | -------------------------------------------------------- |
 | `mklabel gpt`                 | Создаёт таблицу разделов GPT (очищает диск полностью).   |
-| `mkpart primary ext4 0% 100%` | Создаёт первичный раздел типа ext4 на весь диск.         |
+| `mkpart primary ext4 0% 100%` | Создаёт первичный раздел на весь диск.                   |
 | `name 1 data_disk`            | Присваивает разделу 1 имя `data_disk` (видно в `lsblk`). |
 | `quit`                        | Выход и сохранение изменений.                            |
+
+> [!IMPORTANT]
+> Частое заблуждение: слово `ext4` в `mkpart primary ext4 0% 100%` **не создаёт файловую систему** — `parted` лишь помечает тип раздела в таблице (подсказка для других инструментов), реальных структур ext4 на диске ещё нет. Файловую систему создаёт только отдельная команда `mkfs.ext4` (раздел "Форматирование раздела" ниже) — без неё раздел останется пустым и неиспользуемым, даже если `lsblk`/`parted print` показывают "ext4" в колонке типа.
 
 **Обновляем таблицу разделов:**
 
@@ -206,6 +202,13 @@ mkfs.xfs /dev/sda1
 mkfs.btrfs /dev/sda1
 mkfs.ntfs /dev/sda1
 ```
+
+> [!NOTE]
+> В отличие от `mkfs.ext4` (обычно уже есть из коробки), эти три — из отдельных пакетов, не всегда установленных по умолчанию:
+> ```bash
+> sudo apt install xfsprogs btrfs-progs ntfs-3g   # Astra Linux
+> sudo yum install xfsprogs btrfs-progs ntfs-3g   # РЕД ОС (или dnf)
+> ```
 
 ---
 
@@ -264,6 +267,9 @@ sudo mount -a
 
 > ✅ Если ошибок нет — автоподключение работает.
 
+> [!WARNING]
+> На **удалённом сервере без доступа к консоли** (обычная ситуация для VPS/нод в другом ДЦ) ошибка в `/etc/fstab` (опечатка в UUID, лишний пробел, несуществующая точка монтирования) при следующей перезагрузке может уронить загрузку в аварийный режим (systemd emergency shell ждёт пароль root на локальной консоли) — сервер станет недоступен по SSH до физического/консольного вмешательства через панель провайдера. `mount -a` без ошибок — необходимая, но не 100% гарантия: он проверяет запись, но не эмулирует полный процесс загрузки. Для менее критичных точек монтирования добавляйте опцию `nofail` в 4-е поле (`defaults,nofail`) — тогда ошибка монтирования НЕ остановит загрузку системы.
+
 ---
 
 <a id="пример-создание-нескольких-разделов-на-одном-диске"></a>
@@ -310,6 +316,12 @@ sudo mkswap -L swap_area /dev/sdb2
 sudo mkfs.xfs -L backup_store /dev/sdb3
 sudo swapon /dev/sdb2
 ```
+
+> [!WARNING]
+> `swapon` активирует swap только **до следующей перезагрузки** — после ребута он снова отключён, если не добавлен в `/etc/fstab` (та же логика персистентности, что и для обычных разделов в разделе "Автомонтирование при загрузке" выше). Добавьте строку по UUID (`sudo blkid /dev/sdb2`):
+> ```conf
+> UUID=<uuid-раздела-swap> none swap sw 0 0
+> ```
 
 Проверка:
 
@@ -364,8 +376,8 @@ lsblk
 
 | ОС                | Утилиты                                   | Особенности                            |
 | ----------------- | ----------------------------------------- | -------------------------------------- |
-| **RedOS**         | `fdisk`, `parted`, `mkfs.ext4`            | Команды аналогичны RHEL/CentOS/Rocky   |
-| **Astra Linux**   | `fdisk`, `parted`, `gparted`, `mkfs.ext4` | SELinux может блокировать монтирование |
+| **РЕД ОС**        | `fdisk`, `parted`, `mkfs.ext4`            | Команды аналогичны RHEL/CentOS/Rocky; может использовать SELinux — тоже способен блокировать монтирование неразмеченных для него точек |
+| **Astra Linux**   | `fdisk`, `parted`, `gparted`, `mkfs.ext4` | **Не SELinux** (это другой дистрибутив/семейство) — своя система мандатного контроля доступа **PARSEC**, может блокировать монтирование по тем же причинам, но администрируется другими командами (`pdp-*`, не `semanage`/`setsebool`) |
 | **Ubuntu/Debian** | `fdisk`, `parted`, `lsblk`, `mkfs.ext4`   | Часто используется LVM и LUKS          |
 
 ---
@@ -414,6 +426,4 @@ swapon --show
 > * Для SSD — добавляйте `discard` в `/etc/fstab` (TRIM)
 > * Для внешних — **exfat**
 > * Всегда проверяйте `mount -a` перед перезагрузкой!
-
-Хочешь, чтобы я это сделал?
 ```

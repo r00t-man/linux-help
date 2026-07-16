@@ -4,11 +4,7 @@ title: "Временные метки"
 permalink: /07_file_timestamps/
 ---
 
-
 # ⏱ Временные метки файлов в Linux: atime, mtime, ctime
-
-[![Platform](https://img.shields.io/badge/platform-Linux-lightgrey?style=flat-square&logo=linux)]()
-[![Category](https://img.shields.io/badge/category-File%20Management-blue?style=flat-square)]()
 
 Файлы в Linux имеют **три основные временные метки**:  
 
@@ -26,22 +22,29 @@ permalink: /07_file_timestamps/
 ### Используя `stat`
 ```bash
 stat file.txt
-````
+```
 
-Пример вывода:
+Реальный вывод (проверено `stat` из GNU coreutils):
 
 ```
   File: file.txt
-  Size: 123          Blocks: 8          IO Block: 4096   regular file
-Device: 802h/2050d   Inode: 123456      Links: 1
+  Size: 123         	Blocks: 8          IO Block: 4096   regular file
+Device: 802h/2050d	Inode: 123456      Links: 1
+Access: (0644/-rw-r--r--)  Uid: ( 1000/   user1)   Gid: ( 1000/  group1)
 Access: 2025-10-02 10:30:15.123456789 +0300  # atime
 Modify: 2025-10-01 14:12:00.000000000 +0300  # mtime
 Change: 2025-10-01 14:15:30.000000000 +0300  # ctime
- Birth: 2020-01-01 12:00:00.000000000 +0300 # если поддерживается FS
+ Birth: 2020-01-01 12:00:00.000000000 +0300  # если поддерживается FS и версией stat
 ```
 
-> [!TIP]
-> В старых файловых системах (ext3 и ниже) `Birth` может отсутствовать.
+> [!WARNING]
+> Обратите внимание — строк **`Access:` в выводе две**, и это разные вещи: первая (с правами/`Uid`/`Gid`) — это режим доступа файла (`chmod`), вторая, отдельная — время последнего доступа (**atime**), которое нас интересует в этой статье. Легко перепутать при беглом просмотре.
+
+> [!IMPORTANT]
+> `Birth` (время создания файла) показывается не всегда, и дело не только в файловой системе — нужна **достаточно новая версия `stat`** (GNU coreutils 8.32+, поддержка `statx()`). На **RED ОС 7.3/8.0** (собраны на базе старых RHEL 7/8, coreutils там заведомо старее 8.32) и на более старых сборках **Astra Linux** строка `Birth` с высокой вероятностью **не появится вообще**, даже на ext4 — раздел ниже про поддержку ФС описывает, что умеет сама файловая система, а не что реально покажет конкретная `stat` на конкретной машине. Проверить свою версию:
+> ```bash
+> stat --version | head -1
+> ```
 
 ---
 
@@ -124,7 +127,19 @@ chmod 644 file.txt                # изменить права
 
 ### Использование `auditd`
 
-* Для отслеживания, кто и когда открывал или изменял файл:
+Если `auditd` ещё не установлен (**пакет называется по-разному в зависимости от семейства ОС** — как и в других статьях этой вики про Astra/РЕД ОС):
+
+```bash
+# Astra Linux (Debian/apt) — пакет "auditd"
+sudo apt install auditd
+# РЕД ОС (RPM/yum-dnf) — ⚠️ пакет называется "audit", а не "auditd"
+# (сам демон и сервис после установки всё равно называются auditd)
+sudo yum install audit    # или: sudo dnf install audit
+
+sudo systemctl enable --now auditd
+```
+
+Для отслеживания, кто и когда открывал или изменял файл:
 
 ```bash
 sudo auditctl -w /path/to/file.txt -p rwa -k file_watch
@@ -138,6 +153,14 @@ sudo ausearch -f /path/to/file.txt -k file_watch
   * `x` — выполнение
   * `a` — атрибуты (ctime)
 
+> [!WARNING]
+> Правило, добавленное через `auditctl -w ...`, живёт **только в памяти работающего `auditd`** и пропадёт при перезагрузке сервера — это частая причина, когда правило "было настроено", а через день слежение за файлом снова не работает. Чтобы правило сохранилось насовсем, добавьте ту же строку (без `sudo`, только сам вызов `-w ...`) в файл правил:
+> ```bash
+> echo '-w /path/to/file.txt -p rwa -k file_watch' | sudo tee /etc/audit/rules.d/file_watch.rules
+> sudo augenrules --load     # применить правила из /etc/audit/rules.d/ без перезагрузки
+> ```
+> На старых системах без `augenrules` (правила одним файлом `/etc/audit/audit.rules`) — та же строка дописывается прямо туда, затем `sudo systemctl restart auditd`.
+
 > [!TIP]
 > `auditd` позволяет вести полноценный журнал изменений файлов и действий пользователей.
 
@@ -145,11 +168,19 @@ sudo ausearch -f /path/to/file.txt -k file_watch
 
 ### Использование `inotify` (отслеживание в реальном времени)
 
+Утилита `inotifywait` не входит в базовую систему — она из пакета `inotify-tools`, ставится отдельно:
+
+```bash
+sudo apt install inotify-tools     # Astra Linux
+sudo yum install inotify-tools     # РЕД ОС (или dnf)
+```
+
 ```bash
 inotifywait -m file.txt
 ```
 
 * Выводит события: открытие, запись, изменение атрибутов, удаление
+* В отличие от `auditd`, это **не журнал** — `inotifywait` только печатает события, пока сама команда запущена на переднем плане (закрыли терминал — слежение прекратилось). Для постоянного мониторинга в фоне нужен отдельный демон/скрипт-обёртка, а не голый `inotifywait`.
 
 ---
 
@@ -191,11 +222,15 @@ stat -c "%n %x %y %z" *.txt
 
 ---
 
-## 🔗 Полезные ссылки
+## 🔗 Справка
 
-* [man stat](https://linux.die.net/man/1/stat)
-* [man touch](https://linux.die.net/man/1/touch)
-* [man chown](https://linux.die.net/man/1/chown)
-* [man chmod](https://linux.die.net/man/1/chmod)
-* [inotifywait](https://linux.die.net/man/1/inotifywait)
-* [auditctl](https://linux.die.net/man/8/auditctl)
+Внешние ссылки на объекте без интернета бесполезны — вся документация уже есть локально на самой машине:
+
+```bash
+man stat
+man touch
+man chown
+man chmod
+man inotifywait   # доступно после установки inotify-tools
+man auditctl      # доступно после установки auditd/audit
+```

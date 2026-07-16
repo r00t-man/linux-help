@@ -1,15 +1,10 @@
 ---
 layout: default
-title: "Статичные названия сетевых интерфейсов"
+title: "Статичные интерфейсы"
 permalink: /17_inet_static/
 ---
 
 # 🌐 Гайд по созданию статичных названий сетевых интерфейсов
-
-[![Platform](https://img.shields.io/badge/platform-Linux-lightgrey?style=flat-square\&logo=linux)]()
-[![Category](https://img.shields.io/badge/category-Networking-blue?style=flat-square)]()
-[![Interfaces](https://img.shields.io/badge/interfaces-eth%20|%20ens%20|%20lan-green?style=flat-square)]()
-[![Tools](https://img.shields.io/badge/tools-grub%20|%20udev%20|%20systemd-yellow?style=flat-square)]()
 
 В этой инструкции вы узнаете, как задать статичные предсказуемые названия сетевых интерфейсов в разных Linux-дистрибутивах.
 
@@ -37,6 +32,9 @@ sudo nano /etc/default/grub
 GRUB_CMDLINE_LINUX_DEFAULT="quiet net.ifnames=1 parsec.max_ilev=63"
 ```
 
+> [!NOTE]
+> Проверено вживую: на современных systemd-дистрибутивах (в т.ч. Astra) предсказуемые имена (`ensX`/`enpXsY`) и БЕЗ этого параметра включены по умолчанию — `net.ifnames=1` лишь равен уже действующему поведению, добавлять его обычно нужно только если это поведение где-то было отключено раньше. Обратный эффект (вернуть старые `eth0`/`eth1`) даёт `net.ifnames=0`.
+
 ### 2. Обновление конфигурации GRUB
 
 ```bash
@@ -53,7 +51,9 @@ sudo reboot
 
 ---
 
-## 🖥 3. Red Hat / AlmaLinux / Rocky Linux
+## 🖥 3. Своё имя интерфейса по MAC-адресу (РЕД ОС, RHEL/AlmaLinux/Rocky — и Astra тоже)
+
+В отличие от переключателя `net.ifnames` выше (который лишь выбирает между ДВУМЯ встроенными схемами именования — старой `eth0` и предсказуемой `ensX`), этот способ позволяет присвоить интерфейсу **своё собственное имя** (`lan0`, `wan0` и т.п.), привязанное к конкретному MAC-адресу. Работает одинаково на **РЕД ОС, Astra Linux и любом systemd-дистрибутиве** — это не RHEL-специфичная техника, несмотря на заголовок раздела в оригинале статьи.
 
 ### 1. Просмотр текущих интерфейсов
 
@@ -61,26 +61,7 @@ sudo reboot
 ip link
 ```
 
-### 2. Создание правила udev
-
-```bash
-sudo nano /etc/udev/rules.d/70-persistent-net.rules
-```
-
-Пример содержимого:
-
-```text
-SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="00:11:22:33:44:55", NAME="lan0"
-SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="66:77:88:99:AA:BB", NAME="lan1"
-```
-
-### 3. Перезагрузка
-
-```bash
-sudo reboot
-```
-
-> В RHEL 8 можно использовать systemd `.link` файлы:
+### 2. Современный способ — systemd `.link`-файл (рекомендуется на РЕД ОС 7.3/8.0 и Astra, обе платформы systemd-based)
 
 ```bash
 sudo nano /etc/systemd/network/10-lan0.link
@@ -92,6 +73,25 @@ MACAddress=00:11:22:33:44:55
 
 [Link]
 Name=lan0
+```
+
+### 3. Старый способ — классическое udev-правило
+
+Тоже рабочий вариант, но на современных systemd-системах может конфликтовать по времени срабатывания со встроенным механизмом предсказуемых имён — предпочтительнее `.link`-файл выше, если нет причины держать именно udev-правило:
+
+```bash
+sudo nano /etc/udev/rules.d/70-persistent-net.rules
+```
+
+```text
+SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="00:11:22:33:44:55", NAME="lan0"
+SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="66:77:88:99:AA:BB", NAME="lan1"
+```
+
+### 4. Перезагрузка
+
+```bash
+sudo reboot
 ```
 
 ---

@@ -6,11 +6,6 @@ permalink: /14_dir_operation/
 
 # 📁 Работа с директориями в Linux
 
-[![Platform](https://img.shields.io/badge/platform-Linux-lightgrey?style=flat-square\&logo=linux)](https://kernel.org)
-![Category](https://img.shields.io/badge/category-Filesystem-blue?style=flat-square)
-![Level](https://img.shields.io/badge/level-beginner--intermediate-green?style=flat-square)
-![Tested on](https://img.shields.io/badge/tested%20on-Red%20OS%207.3%20%7C%208.0%20%7C%20Astra%20SE%201.7.5%20%7C%201.8-orange?style=flat-square)
-
 ---
 
 ## 🧭 Введение
@@ -93,9 +88,12 @@ dirname /etc/nginx/nginx.conf
 
 ```bash
 FILE="/etc/ssh/sshd_config"
-echo "Файл: $(basename $FILE)"
-echo "Путь: $(dirname $FILE)"
+echo "Файл: $(basename "$FILE")"
+echo "Путь: $(dirname "$FILE")"
 ```
+
+> [!NOTE]
+> Переменную в скрипте лучше подставлять в кавычках (`"$FILE"`, не голое `$FILE`) — без кавычек путь с пробелом внутри развалится на несколько аргументов и сломает команду. В примерах выше это не критично (путь без пробелов), но в реальных скриптах, где путь может прийти откуда угодно, — привычка на будущее.
 
 ---
 
@@ -173,7 +171,8 @@ tree /etc/nginx
 📘 **Пример:**
 
 ```bash
-sudo apt install tree
+sudo apt install tree   # Astra Linux
+sudo yum install tree   # РЕД ОС (или dnf)
 tree -L 2 /etc
 ```
 
@@ -194,7 +193,7 @@ ls -l
 ls -lah /var/log
 ```
 
-См. также статью ["Основные операции с файлами"](../Linux%20help/13_Работа%20с%20файлами.md) для подробностей.
+См. также статью <a href="/a/13_file_operation">Основные операции с файлами</a> для подробностей.
 
 ---
 
@@ -237,6 +236,9 @@ find /etc -type d -name "nginx"
 find /var -type d -mtime -1
 # все каталоги, изменённые за последние сутки
 ```
+
+> [!NOTE]
+> Для директории "изменена" означает, что менялось её **содержимое как список** (создан/удалён/переименован файл внутри) — не то, что изменилось содержимое КАКОГО-ТО файла глубоко внутри неё. Правка файла `/var/www/html/index.html` не обновит mtime у `/var/www` (только у самого файла и у `html`, если файл был создан/удалён, а не просто отредактирован).
 
 ---
 
@@ -291,6 +293,12 @@ find . -type d | wc -l
 ```bash
 cd $(dirname $(which nginx))
 ```
+
+> [!WARNING]
+> Если `nginx` не установлен или не в `PATH` — `which nginx` ничего не выведет, `dirname` без аргумента упадёт с ошибкой `dirname: missing operand` в терминал, а сам `cd` из-за пустой подстановки молча выполнится **без аргумента** — это равносильно голому `cd`, то есть вас незаметно перебросит в домашний каталог, а не оставит на месте. Проверено вживую. Безопаснее сначала убедиться, что бинарник действительно существует:
+> ```bash
+> command -v nginx && cd "$(dirname "$(command -v nginx)")"
+> ```
 
 ---
 

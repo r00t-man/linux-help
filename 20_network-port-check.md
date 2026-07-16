@@ -1,14 +1,10 @@
 ---
 layout: default
-title: "Проверка сетевой доступности и портов"
+title: "Проверка сетевой доступности"
 permalink: /20_network-port-check/
 ---
 
 # 📡 Проверка сетевой доступности и портов
-
-[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows-lightgrey?style=flat-square&logo=linux)]()
-[![Category](https://img.shields.io/badge/category-Network%20Diagnostics-blue?style=flat-square)]()
-[![Tools](https://img.shields.io/badge/tools-traceroute%20%7C%20nc%20%7C%20nmap%20%7C%20curl-yellow?style=flat-square)]()
 
 В этом гайде собраны основные CLI-команды для проверки сетевой доступности, маршрута, открытых портов и состояния сервисов в Linux и Windows.
 
@@ -19,8 +15,8 @@ permalink: /20_network-port-check/
 | Команда | Назначение | Основные параметры | Пример |
 |----------|-------------|--------------------|--------|
 | `ping` | Проверяет доступность узла по ICMP | `-c <count>` — количество пакетов | `ping -c 4 10.50.0.1` |
-| `traceroute` | Отслеживает маршрут к узлу | `-T` — TCP SYN, `-p` — порт | `traceroute -T -p 7880 10.50.0.1` |
-| `mtr` | Комбинация ping + traceroute | `-T` — TCP, `-P` — порт | `mtr -T -P 80 10.50.0.1` |
+| `traceroute` | Отслеживает маршрут к узлу | `-T` — TCP SYN, `-p` (строчная!) — порт | `traceroute -T -p 7880 10.50.0.1` |
+| `mtr` | Комбинация ping + traceroute | `-T` — TCP, `-P` (ЗАГЛАВНАЯ!) — порт | `mtr -T -P 80 10.50.0.1` |
 | `nc` (netcat) | Проверка портов и соединений | `-z` — без передачи данных, `-v` — подробный вывод, `-u` — UDP | `nc -zv 10.50.0.1 22` |
 | `telnet` | Проверка TCP-порта вручную | `<host> <port>` | `telnet 10.50.0.1 443` |
 | `/dev/tcp` | Встроенная проверка без nc | — | `bash -c "</dev/tcp/10.50.0.1/8080"` |
@@ -53,8 +49,8 @@ permalink: /20_network-port-check/
 ### 🟢 Astra / Debian / Ubuntu
 ```bash
 sudo apt update
-sudo apt install -y traceroute netcat nmap mtr-tiny telnet curl lsof inetutils-ping
-````
+sudo apt install -y traceroute netcat nmap mtr-tiny telnet curl lsof iputils-ping
+```
 
 | Пакет            | Назначение                          |
 | ---------------- | ----------------------------------- |
@@ -65,7 +61,7 @@ sudo apt install -y traceroute netcat nmap mtr-tiny telnet curl lsof inetutils-p
 | `telnet`         | Проверка TCP-портов вручную         |
 | `curl`           | Проверка HTTP(S)/API                |
 | `lsof`           | Просмотр открытых портов            |
-| `inetutils-ping` | Добавляет ping, если отсутствует    |
+| `iputils-ping`   | Добавляет ping, если отсутствует (обычно уже стоит из коробки) |
 
 ---
 
@@ -103,6 +99,9 @@ sudo yum install -y traceroute nmap nmap-ncat mtr telnet curl lsof iputils
 ```bash
 traceroute -T -p 7880 10.50.0.1
 ```
+
+> [!NOTE]
+> Обратите внимание на регистр флага порта — у `traceroute` строчная `-p`, у `mtr` (ниже) заглавная `-P`. Частая опечатка при копировании команды между этими двумя похожими утилитами.
 
 ### 2. Проверка соединения через `nc`
 
@@ -201,15 +200,15 @@ foreach ($p in $ports) {
 
 ## 🧩 Примеры практических проверок
 
-| Цель                      | Команда                                                 | Комментарий          |             |          |
-| ------------------------- | ------------------------------------------------------- | -------------------- | ----------- | -------- |
-| Проверить порт API (8080) | `nc -zv api.local 8080`                                 | TCP-проверка         |             |          |
-| Проверить HTTP            | `curl -I http://10.50.0.1:8080`                         | Заголовки HTTP       |             |          |
-| Проверить PostgreSQL      | `nc -zv 10.50.0.1 5432`                                 | TCP-порт             |             |          |
-| Проверить Redis           | `timeout 3 bash -c "</dev/tcp/10.50.0.1/6379 && echo OK |                      | echo Fail"` | Без `nc` |
-| Проверить RDP             | `Test-NetConnection 10.50.0.1 -Port 3389`               | PowerShell           |             |          |
-| Проверить SSH             | `nc -zv 10.50.0.1 22`                                   | Проверка доступности |             |          |
-| Проверить SSL             | `openssl s_client -connect 10.50.0.1:443`               | Анализ сертификата   |             |          |
+| Цель                      | Команда                                                  | Комментарий           |
+| ------------------------- | --------------------------------------------------------- | --------------------- |
+| Проверить порт API (8080) | `nc -zv api.local 8080`                                    | TCP-проверка          |
+| Проверить HTTP            | `curl -I http://10.50.0.1:8080`                            | Заголовки HTTP        |
+| Проверить PostgreSQL      | `nc -zv 10.50.0.1 5432`                                    | TCP-порт              |
+| Проверить Redis           | `timeout 3 bash -c "</dev/tcp/10.50.0.1/6379 && echo OK \|\| echo Fail"` | Без `nc` |
+| Проверить RDP             | `Test-NetConnection 10.50.0.1 -Port 3389`                  | PowerShell            |
+| Проверить SSH             | `nc -zv 10.50.0.1 22`                                      | Проверка доступности  |
+| Проверить SSL             | `openssl s_client -connect 10.50.0.1:443`                  | Анализ сертификата    |
 
 ---
 

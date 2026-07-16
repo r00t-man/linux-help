@@ -1,14 +1,8 @@
 ---
 layout: default
-title: "Автоматизация задач с помощью cron"
+title: "Планировщик Cron"
 permalink: /cron-guide/
 ---
-
-[![Linux](https://img.shields.io/badge/Platform-Linux-blue?style=flat-square&logo=linux)]()
-[![Debian](https://img.shields.io/badge/Tested%20on-Astra%20Linux%20%7C%20RED%20OS%20%7C%20Debian-orange?style=flat-square&logo=debian)]()
-[![Type](https://img.shields.io/badge/Type-Task%20Scheduler-lightgrey?style=flat-square&logo=task)]()
-[![CLI](https://img.shields.io/badge/Interface-Console%20Only-success?style=flat-square&logo=gnu-bash)]()
-[![Docs](https://img.shields.io/badge/Docs-cron%20%7C%20crontab-important?style=flat-square&logo=markdown)]()
 
 # ⏱ Автоматизация задач с помощью cron в Linux
 
@@ -89,7 +83,7 @@ Cron состоит из двух основных компонентов:
 | └──── час (0-23)
 └───── минута (0-59)
 
-````
+```
 
 Примеры:
 
@@ -123,7 +117,7 @@ crontab -l
 
 # Удаление всех заданий пользователя
 crontab -r
-````
+```
 
 ---
 
@@ -138,11 +132,14 @@ crontab -r
 Запуск скрипта `/home/user/backup.sh` каждый день в 03:00:
 
 ```bash
-0 3 * * * /home/user/backup.sh >> /var/log/backup.log 2>&1
+0 3 * * * /home/user/backup.sh >> /home/user/backup.log 2>&1
 ```
 
-* `>> /var/log/backup.log` – добавление логов в файл
+* `>> /home/user/backup.log` – добавление логов в файл
 * `2>&1` – вывод ошибок в тот же файл
+
+> [!WARNING]
+> Проверено вживую: `/var/log/` принадлежит `root:syslog` без прав записи для обычных пользователей (`Permission denied` при попытке дописать файл от непривилегированного юзера). Если это crontab обычного пользователя (`crontab -e`, не `/etc/crontab` от root) — лог пишите в свою же директорию (как выше), иначе задание будет молча падать на этапе редиректа, а не только на этапе самого скрипта. Если действительно нужен лог именно в `/var/log/` — задание должно быть в системном crontab и выполняться от root, либо файл должен быть заранее создан с правами, дающими запись нужному пользователю.
 
 ---
 
@@ -181,13 +178,21 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
 Можно добавить в начале crontab.
 
+> [!IMPORTANT]
+> Самая частая практическая причина "вручную работает, а через cron — нет": cron запускает задания в **неинтерактивном шелле без логина**, который НЕ читает ваш `~/.bashrc` (см. также <a href="/a/09_shell_history">Настройка истории команд Bash</a> — там та же логика интерактивных/неинтерактивных сессий). Алиасы, функции и переменные, объявленные только в `.bashrc`, в cron просто недоступны — если скрипту нужны переменные окружения из `.bashrc`/`.profile`, явно пропишите их в самом скрипте или в crontab, не полагайтесь, что cron их "подхватит" как в обычном терминале.
+
 ---
 
 <a id="logirovanie-i-otladka"></a>
 
 ## 📝 Логирование и отладка
 
-* Системные логи cron находятся в `/var/log/syslog` или `/var/log/cron.log`
+* Системные логи cron находятся в `/var/log/syslog` (Astra) или `/var/log/cron` (РЕД ОС) — путь и содержимое зависят от настройки rsyslog, не гарантированы одинаково на обеих ОС.
+* Надёжнее и универсальнее (не зависит от rsyslog) — смотреть напрямую через `journalctl`, но у службы cron **разное имя юнита на разных семействах ОС** (тот же паттерн, что и `ntp`/`ntpd`, `ssh`/`sshd` в других статьях этой вики):
+  ```bash
+  journalctl -u cron    # Astra Linux (пакет "cron")
+  journalctl -u crond   # РЕД ОС (пакет "cronie")
+  ```
 * Для проверки работы задания можно временно перенаправлять вывод в файл:
 
 ```bash

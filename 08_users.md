@@ -6,10 +6,6 @@ permalink: /08_users/
 
 # 👤 Управление пользователями и группами в Linux
 
-[![Platform](https://img.shields.io/badge/platform-Linux-lightgrey?style=flat-square&logo=linux)]()
-[![Category](https://img.shields.io/badge/category-User%20Management-blue?style=flat-square)]()
-[![Tested on](https://img.shields.io/badge/tested%20on-Astra%20SE%201.7.5%20|%20Astra%20SE%201.8%20|%20RED%20OS%207.3-orange?style=flat-square)]()
-
 > [!TIP]  
 > Эти команды универсальны для большинства дистрибутивов Linux. Различия могут быть только в путях конфигурационных файлов или менеджерах пакетов (Astra Linux / РЕД ОС).
 
@@ -20,7 +16,7 @@ permalink: /08_users/
 ### Список пользователей
 ```bash
 cat /etc/passwd
-````
+```
 
 * Каждый пользователь описан строкой:
 
@@ -57,31 +53,38 @@ id
 
 ## 🛠 2. Создание пользователей
 
+> [!WARNING]
+> `adduser` — это НЕ universal shadow-utils команда, а отдельный интерактивный Perl-скрипт из пакета `adduser` (пришёл из Debian-мира). На **Astra Linux** (Debian) он ставит вопросы (пароль, ФИО, комнату и т.п.) сразу при вызове. На **РЕД ОС** (RHEL-семейство) отдельного пакета `adduser` обычно нет — если команда `adduser` вообще существует, это, как правило, просто симлинк на `useradd`, который работает **не интерактивно** и **не задаёт пароль автоматически** (учётка создастся заблокированной, без пароля, пока вы явно не выполните `passwd`). Проверяйте на месте: `type adduser` покажет, что это на самом деле — скрипт или симлинк на `useradd`.
+
 ### Простое создание пользователя
 
 ```bash
-sudo adduser user1
+sudo adduser user1     # Astra: спросит пароль/данные интерактивно
+sudo passwd user1      # РЕД ОС: adduser пароль не поставит — задать отдельно
 ```
 
-* Создает домашнюю директорию `/home/user1`
-* Настраивает пароль, шелл, базовые группы
+* Astra: создаёт домашнюю директорию `/home/user1`, настраивает пароль, шелл, базовые группы через диалог
+* РЕД ОС: то же самое достигается связкой `useradd` (или `adduser`-как-`useradd`) + отдельный `passwd`
 
 ### Создание пользователя без домашнего каталога
 
 ```bash
-sudo adduser --no-create-home user2
+sudo adduser --no-create-home user2    # Astra (пакет adduser)
+sudo useradd -M user2                  # РЕД ОС / универсально через shadow-utils
 ```
 
 ### Создание пользователя с конкретным UID и GID
 
 ```bash
-sudo adduser --uid 1500 --gid 1001 user3
+sudo adduser --uid 1500 --gid 1001 user3   # Astra
+sudo useradd -u 1500 -g 1001 user3         # РЕД ОС / универсально
 ```
 
 ### Добавление комментариев
 
 ```bash
-sudo adduser --comment "Developer" devuser
+sudo adduser --comment "Developer" devuser   # Astra
+sudo useradd -c "Developer" devuser          # РЕД ОС / универсально
 ```
 
 ---
@@ -127,11 +130,14 @@ sudo visudo
 
 ```bash
 sudo passwd -l root       # блокировка пароля root
-sudo usermod -L root      # альтернативная блокировка
+sudo usermod -L root      # альтернативная блокировка (тот же эффект, что и -l выше)
 ```
 
 * root всё ещё существует, но нельзя войти напрямую через пароль.
 * Используем `sudo` у обычных пользователей для административных задач.
+
+> [!WARNING]
+> Блокировка пароля (`-l`/`-L`) закрывает только **парольный** вход. Она НЕ мешает войти под root по SSH-ключу, если в `sshd_config` разрешён `PermitRootLogin yes` (или `without-password`/`prohibit-password` — эти два прямо предполагают именно ключ, минуя пароль) и у root настроен `authorized_keys`. Чтобы реально закрыть прямой root-доступ по SSH — нужен ещё `PermitRootLogin no` в `/etc/ssh/sshd_config` (плюс `systemctl restart ssh`/`sshd`, см. раздел про SSH-доступ ниже). Блокировка пароля и запрет root в SSH — две независимые настройки, обе нужны для полного эффекта.
 
 ---
 
@@ -180,7 +186,8 @@ AllowUsers devuser user1
 3. Перезапустить SSH:
 
 ```bash
-sudo systemctl restart ssh
+sudo systemctl restart ssh     # Astra Linux — юнит называется "ssh"
+sudo systemctl restart sshd    # РЕД ОС — юнит называется "sshd"
 ```
 
 > [!IMPORTANT]
@@ -190,16 +197,21 @@ sudo systemctl restart ssh
 
 ## ⚙️ 8. Удаление пользователей и групп
 
+> [!NOTE]
+> `deluser` — та же история, что и `adduser` (см. предупреждение в разделе 2): пакет-специфичная Debian-обёртка. Универсальная shadow-utils команда — `userdel`, есть и на Astra, и на РЕД ОС.
+
 ### Удаление пользователя, оставив домашний каталог
 
 ```bash
-sudo deluser user1
+sudo deluser user1    # Astra (пакет adduser)
+sudo userdel user1    # РЕД ОС / универсально
 ```
 
 ### Удаление пользователя с домашним каталогом
 
 ```bash
-sudo deluser --remove-home user1
+sudo deluser --remove-home user1   # Astra
+sudo userdel -r user1              # РЕД ОС / универсально
 ```
 
 ### Удаление группы
@@ -247,12 +259,12 @@ ps -u user1
 
 ---
 
-## 🔗 Полезные ссылки
+## 🔗 Справка
 
-* [man adduser](https://linux.die.net/man/8/adduser)
-* [man usermod](https://linux.die.net/man/8/usermod)
-* [man passwd](https://linux.die.net/man/1/passwd)
-* [man deluser](https://linux.die.net/man/8/deluser)
-* [man groupadd](https://linux.die.net/man/8/groupadd)
-* [man visudo](https://linux.die.net/man/8/visudo)
-* [man sshd_config](https://man.openbsd.org/sshd_config)
+Внешние ссылки на объекте без интернета бесполезны — вся документация уже есть локально:
+
+```bash
+man adduser; man useradd; man usermod; man passwd
+man deluser; man userdel; man groupadd; man visudo
+man sshd_config
+```

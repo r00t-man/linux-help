@@ -1,14 +1,10 @@
 ---
 layout: default
-title: "Управление службами с systemd / systemctl"
+title: "Systemd"
 permalink: /19_systemctl-guide/
 ---
 
 # 🔧 Полный гайд по `systemctl` и unit-файлам (systemd)
-
-[![Platform](https://img.shields.io/badge/platform-Linux-lightgrey?style=flat-square&logo=linux)]()
-[![Category](https://img.shields.io/badge/category-System%20Administration-blue?style=flat-square)]()
-[![Tools](https://img.shields.io/badge/tools-systemd%20|%20systemctl-yellow?style=flat-square)]()
 
 ---
 
@@ -119,7 +115,7 @@ ProtectSystem=full
 
 [Install]
 WantedBy=multi-user.target
-````
+```
 
 Ключевые секции и опции:
 
@@ -139,7 +135,7 @@ WantedBy=multi-user.target
   * `ExecStartPre=` / `ExecStartPost=` — команды до/после старта.
   * `ExecReload=` — команда для reload.
   * `ExecStop=` — команда для остановки.
-  * `Restart=` — `no`, `on-success`, `on-failure`, `always`, `on-abnormal`, `on-abort`.
+  * `Restart=` — `no`, `on-success`, `on-failure`, `always`, `on-abnormal`, `on-watchdog`, `on-abort`.
   * `RestartSec=` — пауза перед рестартом.
   * `User=` / `Group=` — под каким пользователем запускать.
   * `Environment=` / `EnvironmentFile=` — переменные окружения.
@@ -363,6 +359,7 @@ WantedBy=sockets.target
 * `on-failure` — при не-нулевом коде, сигнале, таймауте
 * `on-abnormal` — если завершение из-за сигнала/ошибки
 * `on-abort`
+* `on-watchdog` — если сработал watchdog-таймаут (пара к `WatchdogSec=` из чеклиста ниже — в исходной версии статьи это значение отсутствовало, хотя `WatchdogSec=` там же и рекомендуется)
 * `always` — всегда перезапускать
 
 Полезные опции:
@@ -383,9 +380,9 @@ Systemd предоставляет много опций безопасност�
 * Пользователь/группа: `User=`, `Group=`.
 * `NoNewPrivileges=true` — запрет на повышение привилегий через execve.
 * `PrivateTmp=true` — отдельный /tmp для сервиса.
-* `ProtectSystem=full|strict` — делает `/usr` и `/boot` доступными только для чтения.
-* `ProtectHome=true` — делает `/home`, `/root` и `/run/user` доступными только для чтения (или недоступными).
-* `ReadOnlyDirectories=` / `ReadWriteDirectories=` — тонкая настройка.
+* `ProtectSystem=` — три уровня, не два (проверено по `man systemd.exec`): `true`/`yes` — только `/usr` и загрузчик (`/boot`, `/efi`) на чтение; `full` — то же + дополнительно `/etc` тоже на чтение (это и есть отличие full от true, в исходной версии статьи `/etc` не упоминался вообще); `strict` — вся файловая система на чтение, кроме `/dev`, `/proc`, `/sys`.
+* `ProtectHome=` — это НЕ один режим с двумя описаниями, а разные значения с разным эффектом: `true` — `/home`, `/root`, `/run/user` становятся **недоступны и пусты** (не просто read-only!); `read-only` — те же три каталога именно на чтение; `tmpfs` — временная пустая ФС поверх них.
+* `ReadOnlyPaths=` / `ReadWritePaths=` — тонкая настройка (актуальные имена; `ReadOnlyDirectories=`/`ReadWriteDirectories=` из старых версий статьи — устаревшие имена этих же опций, в текущем `man systemd.exec` уже не упоминаются).
 * `CapabilityBoundingSet=` — набор доступных Linux-capabilities.
 * `RestrictAddressFamilies=` — ограничение семей сокетов.
 * `SystemCallFilter=` — белый/чёрный список syscalls (при поддержке ядра).
@@ -457,6 +454,9 @@ ProtectSystem=full
 [Install]
 WantedBy=multi-user.target
 ```
+
+> [!NOTE]
+> `www-data` — стандартный веб-пользователь Astra Linux/Debian. На РЕД ОС (RHEL-семейство) такого пользователя обычно нет — там типично `nginx`/`apache`, либо создайте свой: `sudo useradd -r -s /sbin/nologin myweb`.
 
 ### 2) Форкающийся демон (`Type=forking`)
 

@@ -1,14 +1,10 @@
 ---
 layout: default
-title: "Сети — кратко"
+title: "Кратко"
 permalink: /10_network_basics/
 ---
 
-
 # 🌐 Полезные команды Linux для работы с сетями (LAN / WiFi)
-
-[![Platform](https://img.shields.io/badge/platform-Linux-lightgrey?style=flat-square&logo=linux)]()
-[![Category](https://img.shields.io/badge/category-Networking-blue?style=flat-square)]()
 
 Эта инструкция содержит подробное описание команд для настройки, диагностики и мониторинга сети в Linux, как проводной (LAN), так и беспроводной (WiFi).  
 
@@ -24,7 +20,7 @@ permalink: /10_network_basics/
 
 ```bash
 sudo dhclient eth0
-````
+```
 
 * Применяется при подключении к сети с DHCP-сервером.
 * Можно указать конкретный интерфейс или несколько интерфейсов.
@@ -66,7 +62,14 @@ sudo ifup eth0     # Поднять интерфейс
 sudo ifdown eth0   # Опустить интерфейс
 ```
 
-* Обычно используется с сетевыми скриптами `/etc/network/interfaces` (Debian/Astra) или `ifcfg` (RED OS).
+* На **Astra Linux** (Debian) — часть пакета `ifupdown`, читает `/etc/network/interfaces`, есть "из коробки".
+
+> [!NOTE]
+> На **РЕД ОС** (RHEL-семейство) `ifup`/`ifdown` как отдельные команды могут отсутствовать вовсе — RHEL-семейство исторически управляет интерфейсами через `NetworkManager` (`nmcli`/`nmtui`) поверх файлов `ifcfg-*`. Если нужны именно команды `ifup`/`ifdown` — там это отдельный legacy-пакет (`network-scripts` или аналог), не гарантированно установлен по умолчанию. Надёжнее для РЕД ОС:
+> ```bash
+> sudo nmcli connection up eth0
+> sudo nmcli connection down eth0
+> ```
 
 ---
 
@@ -109,6 +112,15 @@ iwconfig eth1
 * Показывает ESSID, режим, частоту, качество сигнала и уровень сигнала.
 * Аналог `ifconfig`, но только для WiFi.
 
+> [!NOTE]
+> `iwconfig`/`iwlist` (пакет `wireless-tools`) — устаревший интерфейс (Wireless Extensions), многие современные драйверы Wi-Fi (nl80211) его уже не поддерживают, команда может просто ничего полезного не показать. Современная замена — `iw`:
+> ```bash
+> sudo apt install iw   # Astra Linux
+> sudo yum install iw   # РЕД ОС (или dnf)
+> iw dev                # список беспроводных интерфейсов
+> iw dev wlan0 link     # текущее подключение (аналог iwconfig)
+> ```
+
 ---
 
 ### `iwlist scan`
@@ -117,6 +129,8 @@ iwconfig eth1
 
 ```bash
 sudo iwlist eth1 scan
+# современная замена:
+sudo iw dev wlan0 scan
 ```
 
 * Показаны ESSID, уровень сигнала, тип шифрования.
@@ -162,7 +176,13 @@ sudo hostname myserver
 ```
 
 * Используется для настройки сетевого имени машины.
-* Имя сохраняется до перезагрузки, чтобы сделать постоянным — редактировать `/etc/hostname`.
+* `hostname myserver` меняет имя только до перезагрузки (только у ядра в памяти).
+
+> [!TIP]
+> Современный и надёжный способ поставить имя насовсем (сам обновит `/etc/hostname`, systemd-way, одинаково на Astra и РЕД ОС):
+> ```bash
+> sudo hostnamectl set-hostname myserver
+> ```
 
 ---
 
@@ -213,6 +233,8 @@ whois www.example.com
 ```bash
 route -n
 netstat -rn
+# современная замена (оба из net-tools, не всегда есть по умолчанию):
+ip route show
 ```
 
 * `-n` — вывод без разрешения имён.
@@ -250,21 +272,26 @@ sudo route del -net 0/0 gw 192.168.1.1    # Удалить
 ```bash
 netstat -tup
 netstat -tupl
+# современная замена (netstat из net-tools, не всегда есть по умолчанию):
+ss -tup
+ss -tupl
 ```
 
-* `-t` TCP, `-u` UDP, `-p` показать PID/имя процесса, `-l` — прослушивающие порты.
+* `-t` TCP, `-u` UDP, `-p` показать PID/имя процесса, `-l` — прослушивающие порты (флаги одинаковые у `netstat` и `ss`).
 
 ---
 
-### `echo "1" > /proc/sys/net/ipv4/ip_forward`
-
-Разрешение форвардинга пакетов (для роутинга):
+### Разрешение форвардинга пакетов (для роутинга/NAT)
 
 ```bash
-sudo echo "1" > /proc/sys/net/ipv4/ip_forward
+echo "1" | sudo tee /proc/sys/net/ipv4/ip_forward
 ```
 
+> [!WARNING]
+> Проверено вживую: `sudo echo "1" > /proc/sys/net/ipv4/ip_forward` **не работает**, если вы не root — классическая ловушка перенаправления в shell. `sudo` повышает права только для самого `echo`, а вот перенаправление (`>`) в файл выполняет ТЕКУЩИЙ, не повышенный шелл — получите `Permission denied`, хотя команда выглядит правильно. Рабочие варианты: `echo "1" | sudo tee /proc/sys/net/ipv4/ip_forward` (запись делает уже sudo'нутый `tee`) или `sudo sh -c 'echo 1 > /proc/sys/net/ipv4/ip_forward'`.
+
 * Используется для организации NAT/маршрутизации.
+* Для постоянного эффекта после перезагрузки — добавить `net.ipv4.ip_forward = 1` в `/etc/sysctl.conf` (или файл в `/etc/sysctl.d/`) и выполнить `sudo sysctl -p`.
 
 ---
 

@@ -1,11 +1,10 @@
 ---
 layout: default
-title: "journalctl — Часть 3: Централизованный сбор журналов через systemd-journal-remote"
+title: "Journalctl - part 3"
 permalink: /21_2_journalctl-remote/
 ---
 
-# 🌐 `journalctl` — Часть 3: <br>
-# Централизованный сбор журналов <br> (`systemd-journal-remote`)
+# 🌐 `journalctl` — Часть 3: Централизованный сбор журналов (`systemd-journal-remote`)
 
 `systemd-journal-remote` позволяет собирать и сохранять логи с других хостов, где используется `systemd`.  
 Это штатный инструмент systemd, без необходимости в rsyslog, syslog-ng или ELK.  
@@ -52,7 +51,7 @@ permalink: /21_2_journalctl-remote/
 │ systemd-journal-upload.service │                          │ systemd-journal-remote.service │
 └────────────────────────────────┘                          └────────────────────────────────┘
 
-````
+```
 
 1. **Клиент** (`systemd-journal-upload`) — отправляет логи на удалённый сервер.
 2. **Сервер** (`systemd-journal-remote`) — принимает и сохраняет журналы.
@@ -66,7 +65,7 @@ permalink: /21_2_journalctl-remote/
 ### Для Debian / Astra Linux
 ```bash
 sudo apt install systemd-journal-remote
-````
+```
 
 ### Для Red OS / RHEL / CentOS / ALT
 
@@ -103,16 +102,31 @@ sudo systemctl enable systemd-journal-remote
 sudo systemctl start systemd-journal-remote
 ```
 
+> [!WARNING]
+> Проверено вживую (установлен и запущен реальный пакет): штатный unit-файл `systemd-journal-remote.service` жёстко прописывает `--listen-https` (не HTTP!) и по умолчанию ждёт сертификат в `/etc/ssl/private/journal-remote.pem`. Без готового сертификата служба **не стартует вообще** — падает в цикл рестартов с ошибкой `Failed to read key from file '/etc/ssl/private/journal-remote.pem': Permission denied` (или "No such file"). То есть шаги 1️⃣–4️⃣ этого раздела сами по себе **не поднимут рабочий сервер** — нужен ОДИН из двух путей:
+> - Настроить HTTPS-сертификаты **сейчас**, а не потом — см. раздел "Безопасность и HTTPS" ниже, он на самом деле не опциональное усиление, а обязательное условие запуска со штатным юнитом;
+> - Либо явно переключиться на простой HTTP через override (если шифрование не требуется, например в закрытом внутреннем контуре):
+>   ```bash
+>   sudo systemctl edit systemd-journal-remote.service
+>   ```
+>   и в открывшемся drop-in указать:
+>   ```ini
+>   [Service]
+>   ExecStart=
+>   ExecStart=/usr/lib/systemd/systemd-journal-remote --listen-http=-3 --output=/var/log/journal/remote/
+>   ```
+>   (пустая строка `ExecStart=` перед новым значением обязательна — иначе новая команда добавится ВТОРЫМ `ExecStart=`, а не заменит исходный).
+
 3️⃣ **Проверяем статус**
 
 ```bash
 sudo systemctl status systemd-journal-remote
 ```
 
-По умолчанию служба слушает:
+По умолчанию (без переключения на `--listen-http` выше) служба ожидает HTTPS:
 
 ```
-http://0.0.0.0:19532/
+https://0.0.0.0:19532/
 ```
 
 4️⃣ **Проверяем порт**

@@ -4,12 +4,7 @@ title: "Архивы"
 permalink: /04_archives/
 ---
 
-
 # 📦 Руководство по архивированию в Linux: `tar`, `gzip`, `gunzip`, `unrar`
-
-[![Platform](https://img.shields.io/badge/platform-Linux-lightgrey?style=flat-square&logo=linux)]()
-[![Tested on](https://img.shields.io/badge/tested%20on-Ubuntu%2024.04%20|%20Debian%2012-orange?style=flat-square)]()
-[![Archive Tools](https://img.shields.io/badge/tools-tar%20|%20gzip%20|%20unrar-blue?style=flat-square)]()
 
 Подробное руководство по архивированию и разархивированию файлов в Linux с использованием встроенных утилит. Основной упор на **tar.gz** и **RAR** файлы.  
 
@@ -22,7 +17,7 @@ permalink: /04_archives/
 ### Синтаксис
 ```bash
 tar [options] archive_name files_or_directories
-````
+```
 
 ### Основные опции
 
@@ -34,6 +29,8 @@ tar [options] archive_name files_or_directories
 | `-f`  | Указать имя архива (обязательно)           |
 | `-z`  | Сжать/распаковать через gzip (`.tar.gz`)   |
 | `-j`  | Сжать/распаковать через bzip2 (`.tar.bz2`) |
+| `-J`  | Сжать/распаковать через xz (`.tar.xz`)     |
+| `-t`  | Показать список файлов в архиве, не распаковывая |
 | `-C`  | Извлекать файлы в указанную директорию     |
 
 ### Примеры
@@ -74,8 +71,21 @@ tar -cjvf backup.tar.bz2 /home/user/docs/
 tar -xjvf backup.tar.bz2
 ```
 
+#### Архив с xz (`.tar.xz`, сжимает лучше gzip/bzip2, но медленнее)
+
+```bash
+tar -cJvf backup.tar.xz /home/user/docs/
+tar -xJvf backup.tar.xz
+```
+
+#### Посмотреть содержимое архива, не распаковывая
+
+```bash
+tar -tzvf backup.tar.gz
+```
+
 > [!TIP]
-> Используйте `-v` для контроля процесса, особенно при больших архивах.
+> Используйте `-v` для контроля процесса, особенно при больших архивах. Перед распаковкой незнакомого/скачанного архива — сначала `-t`, чтобы увидеть, что внутри и с какими путями, не распаковывая вслепую.
 
 ---
 
@@ -90,20 +100,27 @@ gzip file          # создаёт file.gz
 gunzip file.gz     # распаковывает file.gz
 ```
 
+> [!WARNING]
+> И `gzip`, и `gunzip` по умолчанию **удаляют исходный файл** после успешной операции — остаётся только результат (`file` → только `file.gz`, и наоборот). Если нужно оставить оба файла — добавьте `-k`/`--keep`:
+> ```bash
+> gzip -k report.txt      # останутся и report.txt, и report.txt.gz
+> gunzip -k report.txt.gz # останутся и report.txt.gz, и report.txt
+> ```
+
 ### Примеры
 
 #### Сжатие файла
 
 ```bash
 gzip report.txt
-# результат: report.txt.gz
+# результат: report.txt.gz, исходный report.txt удалён
 ```
 
 #### Разжатие файла
 
 ```bash
 gunzip report.txt.gz
-# восстановлен report.txt
+# восстановлен report.txt, report.txt.gz удалён
 ```
 
 #### Просмотр содержимого без распаковки
@@ -126,18 +143,24 @@ RAR не является встроенным стандартом Linux, но 
 
 ### Установка
 
-#### Debian/Ubuntu:
+#### Astra Linux (Debian/apt):
 
 ```bash
 sudo apt update
 sudo apt install unrar
 ```
 
-#### RedHat/CentOS/Fedora:
+#### РЕД ОС (RPM/yum-dnf):
 
 ```bash
-sudo dnf install unrar
+sudo yum install unrar     # или: sudo dnf install unrar
 ```
+
+> [!NOTE]
+> На Debian-based системах в основных репозиториях иногда встречается только **`unrar-free`** — урезанный опенсорсный клон с ограниченной поддержкой новых версий формата RAR (RAR5+ распаковывает не всегда). Полноценный `unrar` (от правообладателя, бесплатный для использования, но с закрытым исходным кодом) может лежать в отдельном репозитории (`non-free`/`contrib`) — если после установки `unrar` архив не распаковывается с ошибкой по формату, проверьте, какая версия реально стоит:
+> ```bash
+> unrar   # без аргументов — первая строка выведет "UNRAR ... freeware" (полный) или упомянет "free" в другом виде (урезанный клон)
+> ```
 
 ### Синтаксис
 
@@ -153,6 +176,11 @@ unrar [options] archive.rar [destination]
 | `e`   | Извлечь файлы в текущую директорию (без путей) |
 | `l`   | Просмотр содержимого архива                    |
 | `v`   | Подробный вывод                                |
+| `-o+` | Перезаписывать существующие файлы БЕЗ вопросов |
+| `-o-` | Пропускать существующие файлы, не перезаписывать |
+
+> [!IMPORTANT]
+> По умолчанию (без флага `-o`) `unrar` **спрашивает подтверждение** при каждом совпадении имени файла. `-o+` — это не "с подтверждением", а наоборот, **принудительная перезапись без единого вопроса** (удобно для автоматизации/скриптов, но легко затереть что-то нужное невнимательным Enter'ом на всю пачку). `-o-`, наоборот, тихо пропускает файлы, которые уже существуют.
 
 ### Примеры
 
@@ -174,7 +202,7 @@ unrar x archive.rar /home/user/restore/
 unrar e archive.rar
 ```
 
-#### Извлечение с подтверждением перезаписи
+#### Извлечение с принудительной перезаписью (без вопросов)
 
 ```bash
 unrar x -o+ archive.rar
@@ -229,9 +257,12 @@ tar -czvf project_backup.tar.gz /home/user/project1 /home/user/project2
 
 ---
 
-## 🔗 Полезные ссылки
+## 🔗 Справка
 
-* [tar man page](https://linux.die.net/man/1/tar)
-* [gzip man page](https://linux.die.net/man/1/gzip)
-* [unrar man page](https://linux.die.net/man/1/unrar)
-* [Резервное копирование Linux](https://wiki.archlinux.org/title/Backup)
+Внешние ссылки на объекте без интернета бесполезны — вся документация уже есть локально:
+
+```bash
+man tar
+man gzip
+man unrar   # если пусто — попробуйте `unrar` без man, у него встроенная справка по -h
+```

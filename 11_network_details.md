@@ -1,20 +1,15 @@
 ---
 layout: default
-title: "Сети — подробно"
+title: "Подробнее"
 permalink: /11_network_details/
 ---
 
-
 # 🌐 Ручная конфигурация сети в Linux
-
-[![Platform](https://img.shields.io/badge/platform-Linux-lightgrey?style=flat-square&logo=linux)]()
-[![Category](https://img.shields.io/badge/category-Networking-blue?style=flat-square)]()
 
 В этой статье мы рассмотрим, как **правильно вручную настраивать сетевые интерфейсы** в Linux, управлять сетевыми службами, использовать альтернативные утилиты и учитывать нюансы разных дистрибутивов.
 
-> [!IMPORTANT] 
-> <br> **основные инструменты и команды**: <br>
-> `networking` `NetworkManager` `netplan` `nmtui` `nmcli` `ip addr` `ip route` <br>
+> [!IMPORTANT]
+> **Основные инструменты и команды:** `networking`, `NetworkManager`, `netplan`, `nmtui`, `nmcli`, `ip addr`, `ip route`
 
 ---
 
@@ -40,7 +35,7 @@ iface eth1 inet static
     netmask 255.255.255.0
     gateway 192.168.1.1
     dns-nameservers 8.8.8.8 8.8.4.4
-````
+```
 
 * `auto <interface>` — интерфейс поднимается автоматически при старте.
 * `iface <interface> inet <method>` — метод настройки (`dhcp` или `static`).
@@ -57,6 +52,12 @@ sudo systemctl stop networking          # Остановить
 sudo systemctl start networking         # Запустить
 sudo systemctl status networking        # Проверить статус
 ```
+
+> [!NOTE]
+> `systemctl restart networking` перезапускает службу целиком, но на практике не всегда переподнимает уже настроенные интерфейсы (известная особенность init-скрипта `ifupdown`). Надёжнее для одного интерфейса — точечно:
+> ```bash
+> sudo ifdown eth0 && sudo ifup eth0
+> ```
 
 > [!IMPORTANT]
 > Если вы используете **графическую оболочку (Gnome/KDE)**, то её NetworkManager может конфликтовать с ручной настройкой.
@@ -81,6 +82,9 @@ sudo systemctl mask NetworkManager
 ## 🌐 2. Альтернатива: Netplan (Ubuntu 18.04+ / Astra SE 1.8+)
 
 Netplan — современный способ конфигурации сети через YAML.
+
+> [!NOTE]
+> Netplan — изначально Ubuntu-инструмент; на Debian (и, соответственно, на Astra) он НЕ обязательно стоит по умолчанию, даже на 1.8 — проверьте `dpkg -l netplan.io`, при отсутствии — `sudo apt install netplan.io`.
 
 ### Пример конфигурации (`/etc/netplan/01-netcfg.yaml`)
 
@@ -111,8 +115,8 @@ sudo netplan apply
 * Для проверки:
 
 ```bash
-sudo netplan try
-sudo netplan generate
+sudo netplan try        # применяет временно, откатит сам, если не подтвердить за 120с — безопасно для удалённой машины
+sudo netplan generate   # только собирает конфиги backend'а (systemd-networkd/NM) из YAML, ничего не применяет — для отладки
 ```
 
 > [!TIP]
@@ -143,9 +147,19 @@ sudo nmtui
 
 ```bash
 nmcli connection show              # Список всех соединений
-nmcli connection add ...           # Создать новое соединение
 nmcli connection up <name>         # Поднять соединение
 nmcli connection down <name>       # Опустить соединение
+```
+
+Создание нового соединения — конкретные рабочие примеры:
+
+```bash
+# DHCP на eth0
+sudo nmcli connection add type ethernet con-name eth0-dhcp ifname eth0
+
+# Статический IP на eth1
+sudo nmcli connection add type ethernet con-name eth1-static ifname eth1 \
+  ipv4.method manual ipv4.addresses 192.168.1.10/24 ipv4.gateway 192.168.1.1 ipv4.dns 8.8.8.8
 ```
 
 * Полезно для автоматизации и скриптов.

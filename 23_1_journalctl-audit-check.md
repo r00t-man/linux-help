@@ -1,14 +1,10 @@
 ---
 layout: default
-title: "Проверка аудита и контроля состояния journald"
+title: "Проверка аудита"
 permalink: /23_1_journalctl-audit-check/
 ---
 
 # 🧾 Проверка аудита журнала и контроля состояния journald
-
-[![Platform](https://img.shields.io/badge/platform-Linux-lightgrey?style=flat-square&logo=linux)]()
-[![Category](https://img.shields.io/badge/category-Logs%20%26%20Monitoring-blue?style=flat-square)]()
-[![Tools](https://img.shields.io/badge/tools-journalctl%20|%20systemd--analyze%20|%20bash-yellow?style=flat-square)]()
 
 Эта инструкция предназначена для системных администраторов и аудиторов, чтобы проверить корректность работы `systemd-journald`:  
 сохранение логов, ротацию, защиту от переполнения и целостность журнала.
@@ -37,7 +33,7 @@ permalink: /23_1_journalctl-audit-check/
 
 ```bash
 systemctl status systemd-journald
-````
+```
 
 **Что проверить:**
 
@@ -85,8 +81,10 @@ systemd-analyze cat-config systemd/journald.conf
 >
 > ```bash
 > sudo mkdir -p /var/log/journal
+> sudo systemd-tmpfiles --create --prefix /var/log/journal
 > sudo systemctl restart systemd-journald
 > ```
+> Второй шаг (`systemd-tmpfiles --create`) выставляет правильные владельца/группу (`root:systemd-journal`) и setgid — без него каталог от голого `mkdir` останется с дефолтными правами.
 
 ---
 
@@ -125,8 +123,11 @@ sudo systemd-analyze cat-config systemd/journald.conf | grep SystemMaxUse
 Проверить факт ротации можно по логам самой службы:
 
 ```bash
-journalctl -u systemd-journald | grep rotation -A3
+journalctl -u systemd-journald | grep -i "rotat" -A3
 ```
+
+> [!WARNING]
+> Проверено вживую: реальное сообщение journald при ротации — **`Received client request to rotate journal, rotating.`** Слова "rotation" (с окончанием `-ion`) там нет — `grep rotation` (как было в исходном варианте статьи) не находит вообще ничего, даже сразу после подтверждённой ротации (`journalctl --rotate`). Используйте `grep -i "rotat"` (общий корень слова), чтобы поймать и "rotate", и "rotating".
 
 ---
 
@@ -186,7 +187,8 @@ sudo journalctl -f
 В другом терминале вызови, например:
 
 ```bash
-sudo systemctl restart sshd
+sudo systemctl restart ssh    # Astra Linux — юнит "ssh"
+sudo systemctl restart sshd   # РЕД ОС — юнит "sshd"
 ```
 
 Если появляются новые строки — journald работает корректно.

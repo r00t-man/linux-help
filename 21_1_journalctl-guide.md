@@ -1,6 +1,6 @@
 ---
 layout: default
-title: "journalctl — Часть 2: Cheatsheet и настройка journald.conf"
+title: "Journalctl - part 2"
 permalink: /21_1_journalctl-guide/
 ---
 
@@ -70,12 +70,12 @@ permalink: /21_1_journalctl-guide/
 
 /etc/systemd/journald.conf
 
-````
+```
 
 После правок обязательно перезапустите службу:
 ```bash
 sudo systemctl restart systemd-journald
-````
+```
 
 ---
 
@@ -169,13 +169,15 @@ sudo journalctl --rotate
 * Не пересылайте логи в syslog, если используете `journald` как основное хранилище (`ForwardToSyslog=no`).
 * Используйте `Compress=yes` — экономит до 70% места.
 * Настраивайте `RateLimitBurst` и `RateLimitIntervalSec`, чтобы избежать "флуда".
-* В больших инфраструктурах — пересылайте журналы через `systemd-journal-remote` / `journal-gatewayd`.
+* В больших инфраструктурах — пересылайте журналы через `systemd-journal-remote` / `journal-gatewayd` (отдельный пакет `systemd-journal-remote`, не входит в базовую установку — `sudo apt install systemd-journal-remote` / `sudo yum install systemd-journal-remote`).
 * Периодически выполняйте `journalctl --verify` и `--vacuum-*` для профилактики.
 * Для автоматизации добавьте cron-задачу очистки старых логов:
 
   ```bash
   0 3 * * 0 root /usr/bin/journalctl --vacuum-time=30days
   ```
+  > [!NOTE]
+  > Обратите внимание на поле `root` перед командой — это формат **системного** `/etc/cron.d/`/`/etc/crontab` (5 полей времени + пользователь + команда). Если вставить эту строку как есть в личный `crontab -e` (см. <a href="/a/cron-guide">Автоматизация задач с помощью cron</a>) — cron попытается выполнить несуществующую команду `root`, задание не сработает. В `crontab -e` поле пользователя убирается: `0 3 * * 0 /usr/bin/journalctl --vacuum-time=30days`.
 
 ---
 

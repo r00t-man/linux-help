@@ -1,14 +1,10 @@
 ---
 layout: default
-title: "Инвентаризация и аудит Linux-систем"
+title: "Инфо о системе подробнее"
 permalink: /06_01_system-audit/
 ---
 
 # 🧩 Гайд по инвентаризации и аудиту Linux-систем
-
-[![Platform](https://img.shields.io/badge/platform-Linux-lightgrey?style=flat-square&logo=linux)]()
-[![Category](https://img.shields.io/badge/category-System%20Audit-blue?style=flat-square)]()
-[![Tools](https://img.shields.io/badge/tools-systemctl%20|%20getent%20|%20dpkg%20|%20dnf%20|%20rpm-yellow?style=flat-square)]()
 
 ---
 
@@ -31,7 +27,7 @@ permalink: /06_01_system-audit/
 | 1️⃣ Службы | `systemctl list-unit-files` | Показать все юниты (службы, сокеты, таргеты и т.д.) | `--type=service` — только службы |
 | 2️⃣ Пользователи | `getent passwd` + `passwd -S` + `id` | Вывести пользователей, их группы и статус УЗ | Цветной вывод — через `sed` |
 | 3️⃣ Пакеты (Debian/Ubuntu/Astra) | `dpkg-query -l` | Список установленных пакетов | `dpkg-query -L <pkg>` — файлы пакета |
-| 3️⃣ Пакеты (RedOS/Alt) | `dnf list installed` или `rpm -qa` | Список установленных пакетов | `grep <pkg>` — фильтр по имени |
+| 3️⃣ Пакеты (РЕД ОС) | `dnf list installed` или `rpm -qa` | Список установленных пакетов | `grep <pkg>` — фильтр по имени |
 | 4️⃣ Информация о дистрибутиве | `lsb_release -a`, `/etc/astra/*`, `/etc/redos-release` | Узнать версию ОС | `cat /etc/os-release` — универсальный способ |
 
 ---
@@ -43,7 +39,7 @@ permalink: /06_01_system-audit/
 
 ```bash
 systemctl list-unit-files
-````
+```
 
 🧠 **Описание столбцов:**
 
@@ -78,8 +74,12 @@ systemctl list-units --type=service --state=running
 Показать всех пользователей, их группы и статус пароля:
 
 ```bash
+sudo -s   # если ещё не под root
 getent passwd | cut -d: -f1 | xargs -n1 -I {} sh -c 'passwd -S {}; id {}'
 ```
+
+> [!IMPORTANT]
+> Проверено вживую: `passwd -S` для ЧУЖОГО пользователя требует root — обычным пользователем команда вернёт `passwd: You may not view or modify password information for <user>.` для всех, кроме себя самого. Без `sudo`/root этот аудит покажет не реальные статусы, а стену ошибок доступа — выполняйте от root.
 
 🧠 **Что делает команда:**
 
@@ -92,6 +92,7 @@ getent passwd | cut -d: -f1 | xargs -n1 -I {} sh -c 'passwd -S {}; id {}'
 
 * `L` — учётная запись заблокирована
 * `P` — активна, пароль установлен
+* `NP` — **пароль не задан вообще** (проверьте эти учётки в первую очередь при аудите безопасности — потенциально может означать passwordless-вход, если это разрешено PAM)
 
 🌈 **Цветной вывод для удобства (на экране):**
 
@@ -144,7 +145,10 @@ dpkg-query -L nano                 # Файлы пакета
 
 ---
 
-### 🔴 Red OS / ALT Linux / RHEL-подобные
+### 🔴 РЕД ОС / RHEL-подобные
+
+> [!NOTE]
+> ALT Linux (Basealt) — отдельный, не связанный с РЕД ОС дистрибутив. Хоть пакеты там тоже RPM, менеджер пакетов у ALT — `apt-get`/`apt-cache` (их особенность — apt поверх rpm), а не `dnf`/`yum`, как у РЕД ОС/RHEL. Команды этого раздела рассчитаны на РЕД ОС и другие настоящие RHEL-подобные (RHEL/CentOS/Fedora), не на ALT.
 
 ```bash
 dnf list installed
@@ -233,18 +237,19 @@ cat /etc/issue
 
 ```bash
 #!/bin/bash
+# Требует root — passwd -S для чужих пользователей без root вернёт ошибки доступа
 HOSTNAME=$(hostname)
 AUDIT_DIR="/home/gis-audit"
-mkdir -p $AUDIT_DIR
+mkdir -p "$AUDIT_DIR"
 
 echo "[*] Сбор информации с $HOSTNAME..."
 
-systemctl list-unit-files > $AUDIT_DIR/services_list_${HOSTNAME}
-getent passwd | cut -d: -f1 | xargs -n1 -I {} sh -c 'passwd -S {}; id {}' > $AUDIT_DIR/user_pass_group_active_${HOSTNAME}
-dpkg-query -l > $AUDIT_DIR/dpkg_list_${HOSTNAME} 2>/dev/null || rpm -qa > $AUDIT_DIR/rpm_list_${HOSTNAME}
-lsb_release -a > $AUDIT_DIR/os_info_${HOSTNAME} 2>/dev/null || cat /etc/os-release > $AUDIT_DIR/os_info_${HOSTNAME}
-df -h > $AUDIT_DIR/disk_usage_${HOSTNAME}
-free -h > $AUDIT_DIR/memory_usage_${HOSTNAME}
+systemctl list-unit-files > "$AUDIT_DIR/services_list_${HOSTNAME}"
+getent passwd | cut -d: -f1 | xargs -n1 -I {} sh -c 'passwd -S {}; id {}' > "$AUDIT_DIR/user_pass_group_active_${HOSTNAME}"
+dpkg-query -l > "$AUDIT_DIR/dpkg_list_${HOSTNAME}" 2>/dev/null || rpm -qa > "$AUDIT_DIR/rpm_list_${HOSTNAME}"
+lsb_release -a > "$AUDIT_DIR/os_info_${HOSTNAME}" 2>/dev/null || cat /etc/os-release > "$AUDIT_DIR/os_info_${HOSTNAME}"
+df -h > "$AUDIT_DIR/disk_usage_${HOSTNAME}"
+free -h > "$AUDIT_DIR/memory_usage_${HOSTNAME}"
 
 echo "[+] Аудит завершён. Результаты сохранены в ${AUDIT_DIR}"
 ```
@@ -264,8 +269,10 @@ echo "[+] Аудит завершён. Результаты сохранены �
 💡 Совместим с:
 
 * Astra Linux
-* Red OS
-* ALT Linux
+* РЕД ОС
 * Ubuntu / Debian
 * CentOS / RHEL
+
+> [!NOTE]
+> ALT Linux сюда не входит, несмотря на RPM-пакеты — там свой пакетный менеджер (`apt-get` поверх RPM), команды раздела 3 для него не подойдут напрямую (см. предупреждение выше).
 

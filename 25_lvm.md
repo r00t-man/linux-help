@@ -1,16 +1,8 @@
 ---
 layout: default
-title: "Настройка и расширение LVM в Linux"
-permalink: /25_LVM/
+title: "LVM в Linux"
+permalink: /25_lvm/
 ---
-
-[![Linux](https://img.shields.io/badge/Platform-Linux-blue?style=flat-square&logo=linux)]()
-[![Debian](https://img.shields.io/badge/Tested%20on-Astra%20Linux%20%7C%20RedOS%20%7C%20Ubuntu-orange?style=flat-square&logo=debian)]()
-[![Storage](https://img.shields.io/badge/Storage-LVM%20%7C%20Logical%20Volume%20Management-lightgrey?style=flat-square&logo=database)]()
-[![CLI](https://img.shields.io/badge/Interface-Console-success?style=flat-square&logo=gnu-bash)]()
-[![Filesystem](https://img.shields.io/badge/FS-ext4%20%7C%20xfs%20%7C%20btrfs-blue?style=flat-square&logo=files)]()
-[![Reliability](https://img.shields.io/badge/Reliability-Flexible%20%26%20Stable-success?style=flat-square&logo=securityscorecard)]()
-[![Performance](https://img.shields.io/badge/Performance-Scalable%20%26%20Dynamic-critical?style=flat-square&logo=performance)]()
 
 # 🧱 Настройка и расширение LVM в Linux
 
@@ -68,7 +60,7 @@ LV (lv_backup)
 ↓
 Файловая система (ext4, xfs, btrfs)
 
-````
+```
 
 ---
 
@@ -77,7 +69,7 @@ LV (lv_backup)
 
 ```bash
 sudo parted /dev/sdb
-````
+```
 
 **Пример последовательности:**
 
@@ -165,6 +157,9 @@ df -h /mnt/data
    sudo mount -a
    ```
 
+> [!NOTE]
+> Ошибка в этой строке `/etc/fstab` может при следующей перезагрузке уронить загрузку в аварийный режим — на удалённом сервере без консоли это равносильно потере доступа. Подробный разбор риска и опции `nofail` — в статье <a href="/a/25_disks_partitioning">Работа с новыми дисками и создание разделов</a> (раздел "Автомонтирование при загрузке").
+
 ---
 
 <a id="proverka-lvm"></a>
@@ -196,6 +191,12 @@ sudo vgextend vg_data /dev/sdc1
 sudo lvextend -l +100%FREE /dev/vg_data/lv_backup
 ```
 
+> [!TIP]
+> Оба шага (расширение LV + расширение ФС) можно сделать одной командой, добавив `-r`/`--resizefs` — `lvextend` сам вызовет нужный `resize2fs`/`xfs_growfs` после расширения:
+> ```bash
+> sudo lvextend -l +100%FREE -r /dev/vg_data/lv_backup
+> ```
+
 ### 3️⃣ Расширяем файловую систему
 
 **ext4:**
@@ -209,6 +210,9 @@ sudo resize2fs /dev/vg_data/lv_backup
 ```bash
 sudo xfs_growfs /mnt/data
 ```
+
+> [!IMPORTANT]
+> `xfs_growfs` берёт точку монтирования, а не устройство (в отличие от `resize2fs` выше) — это не опечатка. Важнее другое: XFS можно только **увеличивать**, уменьшить существующий раздел XFS штатными средствами нельзя вообще (в отличие от ext4, который `resize2fs` умеет уменьшать при отмонтированной ФС) — если нужна возможность уменьшения в будущем, ext4 гибче.
 
 ---
 
@@ -248,7 +252,8 @@ sudo vgremove vg_data
 sudo pvremove /dev/sdb1
 ```
 
----
+> [!NOTE]
+> Если по ходу статьи в группу добавлялись ещё диски (`/dev/sdc1` из раздела "Расширение LVM", `/dev/sdb1` из раздела "Добавление нового диска") — `pvremove` нужно выполнить для **каждого** физического тома, который входил в `vg_data`, а не только для одного. `vgremove` уничтожает саму группу, но метки PV на остальных дисках без отдельного `pvremove` останутся — диск не будет частью активной VG, но старая LVM-сигнатура на нём сохранится (может путать `pvs`/будущее переиспользование этого диска).
 
 <a id="pod-kapotom"></a>
 
@@ -313,6 +318,9 @@ sudo pvremove /dev/sdb1
   ```bash
   sudo lvcreate -s -L 10G -n snapshot_backup /dev/vg_data/lv_backup
   ```
+
+> [!WARNING]
+> `-L 10G` здесь — размер выделенного места именно под **снапшот** (COW — copy-on-write), а не под сам бэкап. Если за время жизни снапшота в исходный том `lv_backup` (в примерах статьи — 100G+) будет записано/изменено больше 10G данных — место под снапшот кончится, и он станет **невалидным** (LVM пометит его `invalid`, снапшот больше нельзя использовать для восстановления), причём без явной ошибки в момент переполнения, если не следить самому. Проверяйте заполненность снапшота командой `sudo lvs -o+snap_percent` и берите размер с запасом (или используйте thin-provisioning LVM, где эта проблема решается иначе) — особенно если снапшот держится дольше нескольких минут/часов на активно изменяемом томе.
 
 ---
 

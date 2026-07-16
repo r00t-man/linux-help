@@ -1,6 +1,6 @@
 ---
 layout: default
-title: "Полное руководство по journalctl (systemd-journald)"
+title: "Journalctl - part 1"
 permalink: /21_journalctl-guide/
 ---
 
@@ -37,13 +37,14 @@ permalink: /21_journalctl-guide/
   ```bash
   # опция 1: создать директорию для persistent storage и перезапустить journald
   sudo mkdir -p /var/log/journal
+  sudo systemd-tmpfiles --create --prefix /var/log/journal   # выставляет верные root:systemd-journal + setgid
   sudo systemctl restart systemd-journald
 
   # опция 2: в /etc/systemd/journald.conf установить:
   # Storage=persistent
   # и затем:
   sudo systemctl restart systemd-journald
-````
+  ```
 
 После этого логи будут храниться между перезагрузками.
 
@@ -200,7 +201,7 @@ sudo journalctl --list-boots
 * `-o short-iso` — ISO timestamps: удобно в скриптах.
 * `-o short-precise` / `short-iso-precise` — timestamps с микросекундами.
 * `-o verbose` — полная информация: все поля (очень много).
-* `-o export` — бинарный экспорт для последующего чтения `journalctl --file=...`.
+* `-o export` — сериализованный текстовый формат (не настоящий бинарник, хотя и не для чтения глазами напрямую) для передачи между инстансами journald (`systemd-journal-remote`/`journal-upload`) — **не читается обратно через `journalctl --file=...`**, см. предупреждение ниже.
 * `-o json` / `-o json-pretty` / `-o json-sse` — для парсинга (jq).
 * `-o cat` — печатает только значение `MESSAGE` (без заголовков/метаданных).
 
@@ -233,13 +234,16 @@ sudo journalctl -u nginx -n 200 -f    # последние 200 строк, за�
 
 ## 💾 Экспорт и чтение файлов журнала
 
-### Экспорт текущих записей в единый файл (binary export)
+### Экспорт текущих записей в переносимый формат (`-o export`)
 
 ```bash
-sudo journalctl -u nginx --since "2025-10-07" -o export > /tmp/nginx.journal
-# читать:
-sudo journalctl --file=/tmp/nginx.journal
+sudo journalctl -u nginx --since "2025-10-07" -o export > /tmp/nginx.export
 ```
+
+> [!WARNING]
+> Проверено вживую: `.journal`-расширение в имени файла не делает файл настоящим journal-файлом. `journalctl --file=/tmp/nginx.export` на файле, полученном через `-o export`, реально падает с ошибкой **`Failed to open files: Bad message`** — формат `-o export` НЕ совместим с `--file=`. `--file=` понимает только настоящие бинарные `.journal`-файлы из `/var/log/journal/` (или скопированные оттуда один в один), не сериализованный вывод `-o export`. Формат `-o export` предназначен для передачи в `systemd-journal-remote`/`journal-upload`, либо для собственного парсинга скриптом (это по сути текст, `FIELD=value` построчно) — не для обратного чтения через `journalctl --file=`.
+>
+> Если нужно именно "выгрузить кусок журнала и потом читать его через `journalctl --file=`" — копируйте настоящий `.journal`-файл из `/var/log/journal/<machine-id>/` напрямую (`cp`), а не пересобирайте через `-o export`.
 
 ### Экспорт в текст / JSON
 
@@ -286,8 +290,10 @@ sudo journalctl --vacuum-files=5
 
 ```bash
 sudo journalctl --rotate
-sudo systemctl kill -s SIGHUP systemd-journald   # вариант, чтобы journald перечитал конфигурацию
 ```
+
+> [!NOTE]
+> По `man systemd-journald.service`: `journalctl --rotate` под капотом — это то же самое, что послать journald сигнал **`SIGUSR2`** (`sudo systemctl kill -s SIGUSR2 systemd-journald`). `SIGHUP` для journald нигде не задокументирован (в man-странице сигналов для него нет вообще) — это не рабочий способ ни для ротации, ни для перечитывания конфига. Если реально нужно применить изменения `journald.conf` — единственный надёжный способ — `sudo systemctl restart systemd-journald` (полный перезапуск, не сигнал).
 
 Проверить/верифицировать целостность файлов:
 
@@ -381,11 +387,11 @@ sudo journalctl -p err --since today
 sudo journalctl -b -1 -e
 ```
 
-5. Экспорт логов nginx за вчера и сжать:
+5. Экспорт логов nginx за вчера и сжать (для передачи/архива — не для повторного чтения через `journalctl --file=`, см. предупреждение выше):
 
 ```bash
-sudo journalctl -u nginx --since "yesterday" --until "today" -o export > /tmp/nginx.journal
-gzip /tmp/nginx.journal
+sudo journalctl -u nginx --since "yesterday" --until "today" -o export > /tmp/nginx.export
+gzip /tmp/nginx.export
 ```
 
 6. Сохранить только messages (без метаданных):

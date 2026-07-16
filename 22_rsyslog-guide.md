@@ -1,6 +1,6 @@
 ---
 layout: default
-title: "Полное руководство по rsyslog"
+title: "Rsyslog"
 permalink: /22_rsyslog-guide/
 ---
 
@@ -58,7 +58,7 @@ sudo apt update
 sudo apt install rsyslog
 sudo systemctl enable rsyslog
 sudo systemctl start rsyslog
-````
+```
 
 ### RedHat / CentOS / Red OS
 
@@ -111,15 +111,24 @@ sudo systemctl status rsyslog
 module(load="imuxsock")   # для локальных логов (Unix socket /var/run/syslog)
 module(load="imklog")     # для логов ядра
 
-# Хранение логов в текстовые файлы
+# Хранение логов в текстовые файлы (пример путей — RHEL/РЕД ОС, см. предупреждение ниже)
 *.info;mail.none;authpriv.none;cron.none   /var/log/messages
 authpriv.*                                /var/log/secure
 mail.*                                    -/var/log/maillog
 cron.*                                    /var/log/cron
 
 # Пересылка удалённому серверу
-*.* @@10.10.10.5:514      # TCP, с @ один UDP, с @@ TCP
+*.* @@10.10.10.5:514      # с одним @ — UDP, с двумя @@ — TCP (здесь TCP)
 ```
+
+> [!WARNING]
+> Проверено вживую на этой машине: пути `/var/log/messages`/`/var/log/secure`/`/var/log/maillog` — это дефолтный конфиг **RHEL/РЕД ОС**, не Astra/Debian. Реальный дефолтный `/etc/rsyslog.d/50-default.conf` на Debian-based системе пишет в **другие** файлы:
+> ```conf
+> auth,authpriv.*                /var/log/auth.log
+> *.*;auth,authpriv.none         -/var/log/syslog
+> mail.*                         -/var/log/mail.log
+> ```
+> Тот же паттерн, что уже встречался в других статьях этой вики — на Astra используйте `syslog`/`auth.log`/`mail.log`, на РЕД ОС — `messages`/`secure`/`maillog` (последнее для этой ОС и показано в примере выше).
 
 ---
 
@@ -134,18 +143,21 @@ cron.*                                    /var/log/cron
 ```conf
 template(name="jsonTemplate" type="list") {
     constant(value="{")
-    property(name="timestamp" dateFormat="rfc3339")
+    property(name="timestamp" dateFormat="rfc3339" format="jsonf" outname="timestamp")
     constant(value=", ")
-    property(name="hostname")
+    property(name="hostname" format="jsonf" outname="hostname")
     constant(value=", ")
-    property(name="syslogtag")
+    property(name="syslogtag" format="jsonf" outname="syslogtag")
     constant(value=", ")
-    property(name="msg")
+    property(name="msg" format="jsonf" outname="msg")
     constant(value="}\n")
 }
 
 *.* action(type="omfile" file="/var/log/messages.json" template="jsonTemplate")
 ```
+
+> [!WARNING]
+> Проверено вживую (реальный тестовый rsyslogd, `logger` + `json.loads()`): исходный вариант шаблона (без `outname`/`format="jsonf"`, просто `property(name=...)` + `constant(value=", ")`) генерирует **невалидный JSON** — например `{2026-07-11T11:26:11+02:00, myhost, tag:,  hello, world}`: ни одного `"key":`, значения без кавычек, а если сообщение само содержит запятую (обычное дело) — структура записи ломается окончательно, `json.loads()` падает с `JSONDecodeError`. Исправленный вариант выше — с `format="jsonf"` (JSON-safe экранирование значения) и `outname="..."` (имя ключа) — даёт `{"timestamp":"...", "hostname":"...", ...}`, реально проходит `json.loads()` без ошибок, включая сообщения с запятыми/кавычками внутри. Простое добавление кавычек вручную (`constant(value="\"timestamp\":\"")` + `property(... format="jsonf")` без `outname`) тоже не работает — `format="jsonf"` сам добавляет `"имя":`, получится задвоение ключа.
 
 ---
 
@@ -309,15 +321,18 @@ if $programname == 'php-fpm' then /var/log/php-fpm.log
 ```conf
 template(name="GELFTemplate" type="list") {
     constant(value="{")
-    property(name="timestamp")
+    property(name="timestamp" format="jsonf" outname="timestamp")
     constant(value=", ")
-    property(name="hostname")
+    property(name="hostname" format="jsonf" outname="hostname")
     constant(value=", ")
-    property(name="msg")
+    property(name="msg" format="jsonf" outname="short_message")
     constant(value="}\n")
 }
 *.* action(type="omfile" file="/var/log/messages.json" template="GELFTemplate")
 ```
+
+> [!NOTE]
+> Как и в первом JSON-примере выше — без `format="jsonf"`/`outname` этот шаблон тоже даёт невалидный JSON (проверено там же). Настоящий формат GELF также требует обязательные поля `version`/`host`/`short_message` по спецификации — это упрощённый учебный пример структуры, не полноценный GELF-payload.
 
 ---
 
@@ -336,6 +351,6 @@ template(name="GELFTemplate" type="list") {
 
 📎 **Связанные статьи:**
 
-* [Полное руководство по journalctl](/09_journalctl-guide/)
-* [Cheatsheet и конфигурация journald.conf](/10_journalctl-cheatsheet/)
-* [Централизованный сбор через systemd-journal-remote](/11_journalctl-remote/)
+* <a href="/a/21_journalctl-guide">Полное руководство по journalctl</a>
+* <a href="/a/21_1_journalctl-guide">Cheatsheet и конфигурация journald.conf</a>
+* <a href="/a/21_2_journalctl-remote">Централизованный сбор через systemd-journal-remote</a>

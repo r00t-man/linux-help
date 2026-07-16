@@ -1,15 +1,10 @@
 ---
 layout: default
-title: "Информация о системе"
+title: "Инфо о системе"
 permalink: /06_sysinfo/
 ---
 
-
 # 🖥 Полезные команды Linux: получение информации о системе
-
-[![Platform](https://img.shields.io/badge/platform-Linux-lightgrey?style=flat-square&logo=linux)]()
-[![Category](https://img.shields.io/badge/category-System%20Info-blue?style=flat-square)]()
-[![Tested on](https://img.shields.io/badge/tested%20on-Astra%20SE%201.7.5%20|%20Astra%20SE%201.8%20|%20RED%20OS%207.3-orange?style=flat-square)]()
 
 > [!TIP]  
 > Большинство команд универсальны для современных дистрибутивов Linux, включая Astra Linux и РЕД ОС. Различия могут быть только в установке дополнительных пакетов (`dmidecode`, `hdparm`) или правах администратора.
@@ -30,7 +25,7 @@ permalink: /06_sysinfo/
 ```bash
 $ uname -a
 Linux myhost 5.10.0-21-amd64 #1 SMP Debian 5.10.164-2 (2023-09-05) x86_64 GNU/Linux
-````
+```
 
 ---
 
@@ -59,19 +54,22 @@ model name  : Intel(R) Core(TM) i7-9700 CPU @ 3.00GHz
 | `cat /proc/mounts`     | Список смонтированных файловых систем                           |
 | `df -h`                | Использование дискового пространства по смонтированным разделам |
 | `lsblk`                | Дерево устройств хранения                                       |
-| `hdparm -i /dev/sda`   | Характеристики жесткого диска                                   |
+| `hdparm -I /dev/sda`   | Характеристики жёсткого диска (заглавная `-I`, см. предупреждение ниже) |
 | `hdparm -tT /dev/sda`  | Измерение скорости чтения данных                                |
 | `smartctl -a /dev/sda` | Состояние диска через SMART (нужен пакет `smartmontools`)       |
+
+> [!WARNING]
+> `hdparm -i` (строчная) использует старый ioctl-интерфейс, ненадёжный на многих современных SATA/AHCI-дисках (проверено вживую — на этой машине падает с ошибкой `HDIO_GET_IDENTITY failed: Inappropriate ioctl for device`) — используйте заглавную `hdparm -I`. `/dev/sda` — это пример для обычного диска, на виртуалках может быть `/dev/vda` (virtio), на NVMe — `/dev/nvme0n1`; узнать реальное имя — `lsblk`.
 
 ---
 
 ## 🔌 4. Информация о шинах и устройствах
 
-| Команда     | Описание                                              |                                                         |
-| ----------- | ----------------------------------------------------- | ------------------------------------------------------- |
-| `lspci -tv` | Список устройств на шине PCI с древовидной структурой |                                                         |
-| `lsusb -tv` | Список устройств USB с древовидной структурой         |                                                         |
-| `dmesg      | tail -n 50`                                           | Последние сообщения ядра, включая подключение устройств |
+| Команда | Описание |
+| ------- | -------- |
+| `lspci -tv` | Список устройств на шине PCI с древовидной структурой |
+| `lsusb -tv` | Список устройств USB с древовидной структурой |
+| `dmesg \| tail -n 50` | Последние сообщения ядра, включая подключение устройств |
 
 > [!TIP]
 > Для поиска конкретного устройства используйте `lspci | grep -i ethernet` или `lsusb | grep -i camera`.
@@ -83,14 +81,18 @@ model name  : Intel(R) Core(TM) i7-9700 CPU @ 3.00GHz
 | Команда                | Описание                        |
 | ---------------------- | ------------------------------- |
 | `date`                 | Текущая дата и время            |
-| `clock -w`             | Записать системное время в BIOS |
+| `hwclock -w`           | Записать системное время в аппаратные часы (RTC/BIOS) — современное имя команды, `clock` устарело и не везде есть |
 | `date MMDDhhmmYYYY.ss` | Установить дату/время вручную   |
 
 **Пример установки времени:**
 
 ```bash
 date 041217002025.00   # 12 апреля 17:00 2025
+sudo hwclock -w        # чтобы значение пережило перезагрузку
 ```
+
+> [!NOTE]
+> Если на машине работает служба синхронизации времени (`chrony`/`ntpd`/`systemd-timesyncd` — см. <a href="/a/01_ntp">Настройка NTP</a>), она почти сразу перезатрёт вручную выставленное время обратно на "правильное" по её мнению. Ручная установка даты имеет смысл только если служба синхронизации выключена или сервер времени недоступен.
 
 ---
 
@@ -101,8 +103,9 @@ date 041217002025.00   # 12 апреля 17:00 2025
 | `cat /proc/net/dev` | Статистика по сетевым интерфейсам                           |
 | `ip addr`           | Подробные сведения о сетевых интерфейсах                    |
 | `ip -c -br a`       | О сетевых интерфейсах в более коротком виде и цветном выводе|
-| `ifconfig`          | (устарело, но часто используется) вывод сетевых интерфейсов |
-| `netstat -tulnp`    | Список открытых портов и процессов, которые их слушают      |
+| `ifconfig`          | (устарело, из пакета `net-tools`, может не быть установлен) вывод сетевых интерфейсов |
+| `netstat -tulnp`    | (устарело, из пакета `net-tools`) список открытых портов и процессов, которые их слушают |
+| `ss -tulnp`         | Современная замена `netstat` — то же самое, но входит в `iproute2` (обычно уже установлен) |
 
 ---
 
@@ -151,23 +154,19 @@ sudo hdparm -i /dev/sda
 * Команды `arch`, `uname`, `cat /proc/*`, `date`, `df`, `free`, `lspci`, `lsusb`, `who`, `w`, `top` **универсальны и одинаковы**.
 * Для `dmidecode`, `hdparm`, `smartctl` может потребоваться установка пакетов:
 
-  * Astra Linux: `sudo apt install dmidecode hdparm smartmontools`
-  * РЕД ОС: `sudo apt-get install dmidecode hdparm smartmontools`
-* Команды `ip addr` и `netstat` также одинаковы; в новых версиях `ifconfig` может быть не установлен.
+  * Astra Linux (Debian/apt): `sudo apt install dmidecode hdparm smartmontools`
+  * РЕД ОС (RPM/yum-dnf — ⚠️ **не `apt-get`**, это другое семейство ОС): `sudo yum install dmidecode hdparm smartmontools` (или `dnf`)
+* Команда `ip addr` одинакова на обеих ОС. `netstat` и `ifconfig` — оба устаревшие (из пакета `net-tools`, который всё чаще не ставится по умолчанию); современная замена — `ss` (вместо `netstat`) и `ip addr`/`ip link` (вместо `ifconfig`), они входят в `iproute2` и есть практически везде "из коробки".
 
 ---
 
-## 🔗 Полезные ссылки
+## 🔗 Справка
 
-* [man uname](https://linux.die.net/man/1/uname)
-* [man arch](https://linux.die.net/man/1/arch)
-* [man dmidecode](https://linux.die.net/man/8/dmidecode)
-* [man hdparm](https://linux.die.net/man/8/hdparm)
-* [man lspci](https://linux.die.net/man/8/lspci)
-* [man lsusb](https://linux.die.net/man/8/lsusb)
-* [man date](https://linux.die.net/man/1/date)
-* [man free](https://linux.die.net/man/1/free)
-* [man who](https://linux.die.net/man/1/who)
-* [man w](https://linux.die.net/man/1/w)
-* [man top](https://linux.die.net/man/1/top)
+Внешние ссылки на объекте без интернета бесполезны — вся документация уже есть локально:
+
+```bash
+man uname; man arch; man dmidecode; man hdparm
+man lspci; man lsusb; man date; man free
+man who; man w; man top
+```
 

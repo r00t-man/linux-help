@@ -1,19 +1,8 @@
 ---
 layout: default
 title: "Настройка Бонда"
-permalink: /16_Bonding/
+permalink: /16_bonding/
 ---
-
-[![Linux](https://img.shields.io/badge/Platform-Linux-blue?style=flat-square&logo=linux)]()
-[![Debian](https://img.shields.io/badge/Tested%20on-Astra%20Linux%20%7C%20RED%20OS%20%7C%20Debian-orange?style=flat-square&logo=debian)]()
-[![Network](https://img.shields.io/badge/Type-Network%20Bonding-lightgrey?style=flat-square&logo=proxmox)]()
-[![Protocol](https://img.shields.io/badge/Protocol-802.3ad%20(LACP)-brightgreen?style=flat-square&logo=ethernet)]()
-[![CLI](https://img.shields.io/badge/Interface-Console%20Only-success?style=flat-square&logo=gnu-bash)]()
-[![Docs](https://img.shields.io/badge/Docs-NetworkManager%20%7C%20ifenslave-important?style=flat-square&logo=markdown)]()
-[![Bonding](https://img.shields.io/badge/Bond%20Modes-0--6-blue?style=flat-square&logo=linktree)]()
-[![Reliability](https://img.shields.io/badge/Failover-Active--Backup%20%7C%20ALB%20%7C%20LACP-success?style=flat-square&logo=securityscorecard)]()
-[![Performance](https://img.shields.io/badge/Performance-Balancing%20%2B%20Aggregation-critical?style=flat-square&logo=performance)]()
-[![Shell](https://img.shields.io/badge/Shell-Bash%20%7C%20NMCLI-lightgrey?style=flat-square&logo=gnubash)]()
 
 # 🧭 Настройка и виды сетевых бондов (bonding) в Linux
 
@@ -130,7 +119,7 @@ iface bond0 inet static
 | `bond-downdelay 200`      | задержка перед деактивацией порта                          |
 | `bond-updelay 200`        | задержка перед активацией порта                            |
 | `bond-lacp-rate slow`     | частота обмена LACP-пакетами (slow = 30 сек, fast = 1 сек) |
-| `bond-xmit-hash-policy 1` | метод балансировки (по IP, MAC или портам)                 |
+| `bond-xmit-hash-policy layer3+4` | метод балансировки (по IP, MAC или портам) — значение строковое (`layer2`/`layer3+4`/...), не число; число в скобках вида `layer3+4 (2)` — это просто внутренний индекс, который показывает `/proc/net/bonding/bondX`, в конфиге он не используется |
 | `bond-slaves eth0 eth1`   | интерфейсы, входящие в бонд                                |
 
 > [!NOTE]
@@ -149,7 +138,7 @@ Linux поддерживает 7 режимов работы bonding. Ниже �
 Пакеты отправляются последовательно по всем интерфейсам.
 
 **Плюсы:** максимальная пропускная способность
-**Минусы:** может вызывать нарушение порядка пакетов (нужно LACP на свиче)
+**Минусы:** может вызывать нарушение порядка пакетов; коммутатор должен поддерживать статическую агрегацию портов (etherchannel/trunk) — это НЕ то же самое, что LACP: LACP — протокол *динамического* согласования, специфичный именно для mode=4 (802.3ad, см. ниже), для mode=0 на свиче настраивается статическая группа портов без LACP-переговоров
 
 ```bash
 iface bond0 inet static
@@ -308,6 +297,8 @@ iface bond0 inet static
    ```bash
    sudo systemctl restart networking
    ```
+   > [!NOTE]
+   > На практике перезапуск службы целиком не всегда переподнимает уже настроенные интерфейсы (известная особенность init-скрипта `ifupdown`, см. также статью "Подробнее" о сети) — если `bond0` не поднялся, надёжнее явно `sudo ifdown bond0 && sudo ifup bond0` (или просто перезагрузить машину при первой настройке bonding — так безопаснее для сетевого доступа).
 4. Проверить состояние:
 
    ```bash
@@ -320,13 +311,16 @@ iface bond0 inet static
 
 | Mode | Название       | Требует свич | Балансировка | Резерв | Описание                |
 | ---- | -------------- | ------------ | ------------ | ------ | ----------------------- |
-| 0    | balance-rr     | ✅            | ✔            | ✔      | Перебор интерфейсов     |
+| 0    | balance-rr     | ✅ (статическая агрегация) | ✔            | ✔      | Перебор интерфейсов     |
 | 1    | active-backup  | ❌            | ❌            | ✔      | Резервирование          |
-| 2    | balance-xor    | ✅            | ✔            | ✔      | Балансировка по MAC/IP  |
+| 2    | balance-xor    | ✅ (статическая агрегация) | ✔            | ✔      | Балансировка по MAC/IP  |
 | 3    | broadcast      | ❌            | ❌            | ✔      | Дублирование трафика    |
-| 4    | 802.3ad (LACP) | ✅            | ✔            | ✔      | Агрегация IEEE 802.3ad  |
+| 4    | 802.3ad (LACP) | ✅ (именно LACP, динамически) | ✔            | ✔      | Агрегация IEEE 802.3ad  |
 | 5    | balance-tlb    | ❌            | ✔ (Tx)       | ✔      | Без настройки свича     |
 | 6    | balance-alb    | ❌            | ✔ (Tx/Rx)    | ✔      | Адаптивная балансировка |
+
+> [!NOTE]
+> «Требует свич» у mode 0/2 и mode 4 — это РАЗНЫЕ вещи: mode 0/2 нужна ручная статическая агрегация портов (etherchannel/trunk, без переговоров), mode 4 — именно протокол LACP (динамическое согласование). Настройка на стороне свича отличается, не взаимозаменяема.
 
 ---
 
@@ -435,9 +429,9 @@ echo <режим> > /sys/class/net/bond0/bonding/xmit_hash_policy
 | `encap2+3`        | ⚙️ (новый)       | IP под туннелем         | Аналог layer2+3, но учитывает инкапсуляцию (VXLAN, GRE) | Современные виртуализированные среды                    |
 | `encap3+4`        | ⚙️ (новый)       | IP + порты под туннелем | Аналог layer3+4, но с поддержкой туннелей               | LACP + overlay сети (OpenStack, K8s)                    |
 | `vlan+srcmac`     | ⚙️               | VLAN ID + MAC           | Использует VLAN и MAC для хеша                          | Multi-VLAN среда, например, на trunk-портах             |
-| `vlan+ip`         | ⚙️               | VLAN + IP               | Комбинированный режим для tagged сетей                  | Когда один bond обслуживает несколько VLAN              |
-| `vlan+ip+port`    | ⚙️               | VLAN + IP + порт        | Максимально точный, требует ядро ≥5.10                  | Multi-tenant инфраструктуры, балансировка сессий        |
-| `layer3+4+srcmac` | ⚙️               | IP + порт + MAC         | Учитывает MAC и IP/порт источника                       | Когда балансировка зависит от MAC клиента               |
+
+> [!WARNING]
+> Проверено вживую (создан тестовый bond, записаны значения в `/sys/class/net/bondX/bonding/xmit_hash_policy`): `layer2`, `layer2+3`, `layer3+4`, `encap2+3`, `encap3+4`, `vlan+srcmac` — реальные, ядро их принимает. А вот **`vlan+ip`, `vlan+ip+port` и `layer3+4+srcmac` — таких значений в драйвере bonding НЕ существует**, ядро отвечает `invalid value` (видно и в `dmesg`). В предыдущей версии этой статьи они были описаны как настоящие опции с "рекомендациями" использовать их для VLAN/Kubernetes — это ошибка, эти строки и вся связанная рекомендация ниже удалены.
 
 ---
 
@@ -561,10 +555,10 @@ bond-xmit-hash-policy encap3+4
 * Разделение трафика по VLAN ID.
 * Оптимизация в multi-tenant сетях.
 
-**Пример:**
+**Пример** (реально существующее значение — `vlan+srcmac`, не `vlan+ip`/`vlan+ip+port` — см. предупреждение выше):
 
 ```bash
-bond-xmit-hash-policy vlan+ip+port
+bond-xmit-hash-policy vlan+srcmac
 ```
 
 ---
@@ -578,8 +572,8 @@ bond-xmit-hash-policy vlan+ip+port
 | Несколько IP-клиентов     | `layer2+3`                   | Оптимально для DHCP/разных IP      |
 | LACP (802.3ad)            | `layer3+4`                   | Лучший выбор                       |
 | GRE/VXLAN (виртуализация) | `encap3+4`                   | Для OpenStack/KVM/VMWare           |
-| VLAN trunk                | `vlan+ip` или `vlan+ip+port` | Если bond содержит VLAN-интерфейсы |
-| Контейнеры / k8s          | `layer3+4+srcmac`            | Для уникальности потоков           |
+| VLAN trunk                | `vlan+srcmac`                | Если bond содержит VLAN-интерфейсы |
+| Контейнеры / k8s          | `layer3+4`                   | Для балансировки по сессиям/портам |
 
 ---
 

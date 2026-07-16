@@ -1,6 +1,6 @@
 ---
 layout: default
-title: "Ротация логов встроенными средствами"
+title: "Ротация логов"
 permalink: /23_log-rotation-native-only/
 ---
 
@@ -51,8 +51,12 @@ permalink: /23_log-rotation-native-only/
 Постоянное хранение включается параметром:
 ```bash
 sudo mkdir -p /var/log/journal
+sudo systemd-tmpfiles --create --prefix /var/log/journal
 sudo systemctl restart systemd-journald
-````
+```
+
+> [!NOTE]
+> Шаг `systemd-tmpfiles --create` не косметика — он выставляет правильного владельца и группу (`root:systemd-journal`) и setgid-бит на каталоге по правилам из `tmpfiles.d`. Без него каталог, созданный голым `mkdir`, останется с дефолтными правами — journald при этом обычно всё равно продолжит работать от root, но пользователи из группы `systemd-journal` не получат штатный доступ на чтение логов.
 
 ---
 
@@ -89,7 +93,7 @@ sudo nano /etc/systemd/journald.conf
 [Journal]
 Storage=persistent         # хранить логи на диске
 Compress=yes               # сжимать старые записи
-Seal=yes                   # защита от подмены
+Seal=yes                   # защита от подмены (см. предупреждение ниже — нужен доп. шаг)
 SplitMode=uid              # разделять логи по пользователям
 SystemMaxUse=2G            # общий лимит для логов
 SystemKeepFree=1G          # оставлять свободное место
@@ -98,6 +102,15 @@ RuntimeMaxUse=256M         # ограничение для логов в пам�
 MaxRetentionSec=3month     # хранить 3 месяца
 ForwardToSyslog=yes        # дублировать в rsyslog (если включен)
 ```
+
+> [!WARNING]
+> `Seal=yes` сам по себе НЕ включает реальную защиту (Forward Secure Sealing) — по `man journald.conf`: sealing активируется только если **есть ключ**, а ключ создаётся отдельной командой `journalctl --setup-keys`. `Seal=yes` — это и так уже значение по умолчанию, без ключа оно ничего не меняет. Чтобы реально защититься от подмены логов:
+> ```bash
+> sudo journalctl --setup-keys
+> ```
+
+> [!NOTE]
+> `ForwardToSyslog=yes` дублирует записи в системный syslog-сокет, а КУДА именно они попадут дальше — зависит от конфига самого rsyslog, не journald. На **Astra Linux** (Debian) это обычно `/var/log/syslog`, на **РЕД ОС** (RHEL-семейство) — `/var/log/messages` (тот же путь, что уже отмечался в других статьях этой вики).
 
 Применить изменения:
 
@@ -169,7 +182,8 @@ sudo journalctl -n 20
 ### По конкретной службе:
 
 ```bash
-sudo journalctl -u ssh.service
+sudo journalctl -u ssh.service    # Astra Linux — юнит "ssh"
+sudo journalctl -u sshd.service   # РЕД ОС — юнит "sshd"
 ```
 
 ### По времени:
@@ -208,7 +222,7 @@ ForwardToSyslog=yes
 * `SystemMaxUse` — не допускать переполнения диска
 * `MaxRetentionSec` — хранить не более 1 месяца
 * `Compress=yes` — включить сжатие
-* `ForwardToSyslog=yes` — дублировать логи в `/var/log/messages` (если rsyslog включён)
+* `ForwardToSyslog=yes` — дублировать логи в rsyslog, если он включён (Astra → `/var/log/syslog`, РЕД ОС → `/var/log/messages`)
 
 ---
 

@@ -1,14 +1,10 @@
 ---
 layout: default
-title: "Файловое сжатие и упаковка"
+title: "Архивы (расширенно)"
 permalink: /18_archive/
 ---
 
 # 🗂 Гайд по сжатию и упаковке файлов в Linux
-
-[![Platform](https://img.shields.io/badge/platform-Linux-lightgrey?style=flat-square\&logo=linux)]()
-[![Category](https://img.shields.io/badge/category-Files%20%26%20Compression-blue?style=flat-square)]()
-[![Tools](https://img.shields.io/badge/tools-tar%20|%20gzip%20|%20bzip2%20|%20zip-yellow?style=flat-square)]()
 
 ---
 
@@ -27,7 +23,7 @@ permalink: /18_archive/
 | `zcat` | Просмотр сжатых файлов gzip/compress | — |
 | `zip` | Создание ZIP-архивов | `-r` рекурсивно включить папки |
 | `unzip` | Распаковка ZIP | `-l` просмотр содержимого |
-| `metamail` | Извлечение вложений из MIME | `-w` записать вложения в файлы |
+| `munpack` | Извлечение вложений из MIME (`metamail` устарел, обычно недоступен) | `-t` сохранять и текстовые части |
 
 ---
 
@@ -35,7 +31,7 @@ permalink: /18_archive/
 
 ```bash
 tar -cvf archive.tar file1 file2 dir1/
-````
+```
 
 * `-c` — создать архив
 * `-v` — подробный вывод
@@ -87,6 +83,9 @@ bzip2 file.txt
 bunzip2 file.txt.bz2
 ```
 
+> [!NOTE]
+> Как и `gzip`, `bzip2`/`bunzip2` по умолчанию **удаляют исходный файл**, оставляя только результат. Чтобы оставить оба — добавьте `-k`/`--keep` (уже упомянут в таблице выше).
+
 ### 4. `bzcat` — работа с BZip2 через стандартный ввод/вывод
 
 ```bash
@@ -99,13 +98,25 @@ bzcat file.txt.bz2
 
 ## ⚡ 5. `compress` / `uncompress` — традиционное Unix-сжатие
 
+> [!NOTE]
+> Это старая утилита (формат `.Z`, алгоритм LZW), сейчас практически не используется — почти всегда это отдельный пакет, а не часть базовой системы:
+> ```bash
+> sudo apt install ncompress   # Astra Linux — пакет называется ncompress, не compress
+> sudo yum install ncompress   # РЕД ОС (или dnf)
+> ```
+> Если нет причины иметь дело именно с `.Z`-архивом (например он вам достался откуда-то) — для новых архивов проще и современнее `gzip`/`bzip2`/`xz` из статьи выше.
+
 ### Сжатие:
 
 ```bash
 compress file.txt
 ```
 
-* Результат — `file.txt.Z`
+* Результат — `file.txt.Z`, исходный `file.txt` будет удалён (в отличие от `gzip`/`bzip2`, у классического `compress` нет флага `-k`/`--keep`)
+* Чтобы оставить оригинал — направьте результат в файл вручную через `-c`:
+  ```bash
+  compress -c file.txt > file.txt.Z
+  ```
 
 ### Распаковка:
 
@@ -128,13 +139,24 @@ zcat file.txt.Z
 
 ## ⚡ 7. `zip` / `unzip` — сжатие в Windows Zip формат
 
+> [!NOTE]
+> Обычно не входят в базовую установку — ставятся отдельно:
+> ```bash
+> sudo apt install zip unzip   # Astra Linux
+> sudo yum install zip unzip   # РЕД ОС (или dnf)
+> ```
+
 ### Сжатие:
 
 ```bash
 zip archive.zip file1 file2
 ```
 
-* `-r` — рекурсивно добавить директории
+Добавить директорию рекурсивно (без `-r` папки внутрь архива не попадут — `zip` в отличие от `tar` не рекурсивный по умолчанию):
+
+```bash
+zip -r archive.zip folder/
+```
 
 ### Распаковка:
 
@@ -142,17 +164,29 @@ zip archive.zip file1 file2
 unzip archive.zip
 ```
 
-* `-l` — показать содержимое архива
+Посмотреть содержимое, не распаковывая:
+
+```bash
+unzip -l archive.zip
+```
 
 ---
 
-## ⚡ 8. `metamail` — извлечение MIME-данных в файлы
+## ⚡ 8. Извлечение вложений из MIME/email (`.eml`)
+
+> [!WARNING]
+> `metamail` — старый пакет (реализация MIME из начала 90-х), в современных репозиториях его часто уже нет вообще (проверено — в актуальном Ubuntu/Debian пакета `metamail` в репозиториях больше нет, кандидата на установку нет). На Astra Linux/РЕД ОС рассчитывать, что `apt install metamail`/`yum install metamail` сработает, не стоит — с высокой вероятностью пакет просто не найдётся. Актуальная замена — `munpack` из пакета `mpack`:
+> ```bash
+> sudo apt install mpack   # Astra Linux
+> sudo yum install mpack   # РЕД ОС (или dnf)
+> ```
 
 ```bash
-metamail -w message.eml
+munpack -t message.eml
 ```
 
-* Используется для извлечения вложений из email-сообщений в формате MIME.
+* Извлекает все MIME-вложения из `.eml`-файла в текущую директорию (`-t` — сохранять текстовые части тоже, не только бинарные вложения).
+* Тот же пакет `mpack` содержит обратную команду `mpack` — упаковать файл(ы) в MIME-сообщение.
 
 ---
 
