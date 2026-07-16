@@ -2,6 +2,8 @@
 layout: default
 title: "Планировщик Cron"
 permalink: /cron-guide/
+parent: "⚙️ Логи/история — автоматизация"
+nav_order: 4
 ---
 
 # ⏱ Автоматизация задач с помощью cron в Linux

@@ -2,6 +2,8 @@
 layout: default
 title: "Кратко"
 permalink: /10_network_basics/
+parent: "🌐 Сети"
+nav_order: 1
 ---
 
 # 🌐 Полезные команды Linux для работы с сетями (LAN / WiFi)

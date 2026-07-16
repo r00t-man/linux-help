@@ -2,6 +2,8 @@
 layout: default
 title: "Создание разделов"
 permalink: /25_disks_partitioning/
+parent: "🖴 Управление дисками"
+nav_order: 1
 ---
 
 # 💽 Работа с новыми дисками и создание разделов в Linux (fdisk, parted)

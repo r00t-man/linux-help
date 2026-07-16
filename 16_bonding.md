@@ -2,6 +2,8 @@
 layout: default
 title: "Настройка Бонда"
 permalink: /16_bonding/
+parent: "🌐 Сети"
+nav_order: 3
 ---
 
 # 🧭 Настройка и виды сетевых бондов (bonding) в Linux

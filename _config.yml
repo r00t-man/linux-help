@@ -1,87 +1,34 @@
-theme: jekyll-theme-cayman
 title: "Linux Help Docs"
 description: "Сборник инструкций и шпаргалок по Linux"
-plugins:
-  - jekyll-last-modified-at
+remote_theme: just-the-docs/just-the-docs
 
-nav:
-  - name: "📑 Содержание"
-    link: "/"
-  - name: "⏰ Время"
-    children:
-      - name: "Настройка NTP"
-        link: "/01_ntp"
-      - name: "Временные метки"
-        link: "/07_file_timestamps"
-  - name: "📂 Файлы"
-    children:
-      - name: "Версионный бэкап (cp, cron, rsync)"
-        link: "/02_cp_cron_rsync"
-      - name: "Копирование расширенно"
-        link: "/03_copy_advanced"
-      - name: "Архивы"
-        link: "/04_archives"
-      - name: "Архивы (расширенно)"
-        link: "/18_archive"
-      - name: "Операции с файлами"
-        link: "/13_file_operation"
-      - name: "Операции с директориями"
-        link: "/14_dir_operation"
-      - name: "Поиск и просмотр файлов"
-        link: "/15_find_file"
-  - name: "📊 Мониторинг"
-    children:
-      - name: "Мониторинг Linux"
-        link: "/05_monitoring"
-      - name: "Инфо о системе"
-        link: "/06_sysinfo"
-      - name: "Инфо о системе подробнее"
-        link: "/06_01_system-audit"
-  - name: "👯 Пользователи"
-    children:
-      - name: "Пользователи и группы"
-        link: "/08_users"
-      - name: "Права доступа"
-        link: "/12_permissions"
-      - name: "Разблокировка администратора"
-        link: "/unlock_admin_astra"
-  - name: "🌐 Сети"
-    children:
-      - name: "Кратко"
-        link: "/10_network_basics"
-      - name: "Подробнее"
-        link: "/11_network_details"
-      - name: "Настройка Бонда"
-        link: "/16_bonding"
-      - name: "Статичные интерфейсы"
-        link: "/17_inet_static"
-      - name: "Проверка сетевой доступности"
-        link: "/20_network-port-check"
-  - name: "⚙️ Логи/история - автоматизация"
-    children:
-      - name: "История команд"
-        link: "/09_shell_history"
-      - name: "Ротация логов"
-        link: "/23_log-rotation-native-only"
-      - name: "Проверка аудита"
-        link: "/23_1_journalctl-audit-check"
-      - name: "Планировщик Cron"
-        link: "/cron-guide"
-  - name: "🔧 Службы"
-    children:
-      - name: "Systemd"
-        link: "/19_systemctl-guide"
-      - name: "Journalctl - part 1"
-        link: "/21_journalctl-guide"
-      - name: "Journalctl - part 2"
-        link: "/21_1_journalctl-guide"
-      - name: "Journalctl - part 3"
-        link: "/21_2_journalctl-remote"
-      - name: "Rsyslog"
-        link: "/22_rsyslog-guide"
-  - name: "🖴 Управление дисками"
-    children:
-      - name: "Создание разделов"
-        link: "/25_disks_partitioning"
-      - name: "LVM в Linux"
-        link: "/25_lvm"
+plugins:
+  - jekyll-remote-theme
+
+color_scheme: dark
+
+search_enabled: true
+search:
+  heading_level: 2
+  previews: 2
+  preview_words_before: 3
+  preview_words_after: 3
+  tokenizer_separator: /[\s/]+/
+  rel_url: true
+  button: false
+
+nav_sort: case_sensitive
+heading_anchors: true
+
+aux_links:
+  "GitHub":
+    - "https://github.com/r00t-man/linux-help"
+aux_links_new_tab: true
+
+back_to_top: true
+back_to_top_text: "Наверх"
+
+footer_content: "Сборник инструкций и шпаргалок по Linux — Astra Linux, РЕД ОС и другие дистрибутивы."
+
+last_edit_timestamp: true
+last_edit_time_format: "%d.%m.%Y в %H:%M"

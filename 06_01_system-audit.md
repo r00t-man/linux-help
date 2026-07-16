@@ -2,6 +2,8 @@
 layout: default
 title: "Инфо о системе подробнее"
 permalink: /06_01_system-audit/
+parent: "📊 Мониторинг"
+nav_order: 3
 ---
 
 # 🧩 Гайд по инвентаризации и аудиту Linux-систем

@@ -2,6 +2,8 @@
 layout: default
 title: "Journalctl - part 2"
 permalink: /21_1_journalctl-guide/
+parent: "🔧 Службы"
+nav_order: 3
 ---
 
 # 🧾 `journalctl` — Часть 2: Cheatsheet и конфигурация systemd-journald

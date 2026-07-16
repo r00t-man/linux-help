@@ -2,6 +2,8 @@
 layout: default
 title: "Мониторинг Linux"
 permalink: /05_monitoring/
+parent: "📊 Мониторинг"
+nav_order: 1
 ---
 
 # 🖥 Гайд по мониторингу и отладке Linux

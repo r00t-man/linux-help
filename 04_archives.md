@@ -2,6 +2,8 @@
 layout: default
 title: "Архивы"
 permalink: /04_archives/
+parent: "📂 Файлы"
+nav_order: 3
 ---
 
 # 📦 Руководство по архивированию в Linux: `tar`, `gzip`, `gunzip`, `unrar`

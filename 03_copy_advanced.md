@@ -2,6 +2,8 @@
 layout: default
 title: "Копирование расширенно"
 permalink: /03_copy_advanced/
+parent: "📂 Файлы"
+nav_order: 2
 ---
 
 # 📂 Руководство по копированию файлов: `rsync`, `cp`, `scp`

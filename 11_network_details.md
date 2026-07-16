@@ -2,6 +2,8 @@
 layout: default
 title: "Подробнее"
 permalink: /11_network_details/
+parent: "🌐 Сети"
+nav_order: 2
 ---
 
 # 🌐 Ручная конфигурация сети в Linux

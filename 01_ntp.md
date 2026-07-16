@@ -2,6 +2,8 @@
 layout: default
 title: "Настройка NTP"
 permalink: /01_ntp/
+parent: "⏰ Время"
+nav_order: 1
 ---
 
 # ⏱ Настройка NTP и часового пояса на Astra Linux и РЕД ОС

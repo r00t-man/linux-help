@@ -2,6 +2,8 @@
 layout: default
 title: "LVM в Linux"
 permalink: /25_lvm/
+parent: "🖴 Управление дисками"
+nav_order: 2
 ---
 
 # 🧱 Настройка и расширение LVM в Linux

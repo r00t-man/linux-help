@@ -2,6 +2,8 @@
 layout: default
 title: "Проверка сетевой доступности"
 permalink: /20_network-port-check/
+parent: "🌐 Сети"
+nav_order: 5
 ---
 
 # 📡 Проверка сетевой доступности и портов

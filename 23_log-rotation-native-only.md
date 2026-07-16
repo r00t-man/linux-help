@@ -2,6 +2,8 @@
 layout: default
 title: "Ротация логов"
 permalink: /23_log-rotation-native-only/
+parent: "⚙️ Логи/история — автоматизация"
+nav_order: 2
 ---
 
 # ♻️ Ротация логов встроенными средствами (без logrotate)

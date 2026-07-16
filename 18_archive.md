@@ -2,6 +2,8 @@
 layout: default
 title: "Архивы (расширенно)"
 permalink: /18_archive/
+parent: "📂 Файлы"
+nav_order: 4
 ---
 
 # 🗂 Гайд по сжатию и упаковке файлов в Linux

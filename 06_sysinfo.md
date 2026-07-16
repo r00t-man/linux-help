@@ -2,6 +2,8 @@
 layout: default
 title: "Инфо о системе"
 permalink: /06_sysinfo/
+parent: "📊 Мониторинг"
+nav_order: 2
 ---
 
 # 🖥 Полезные команды Linux: получение информации о системе

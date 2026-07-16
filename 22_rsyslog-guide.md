@@ -2,6 +2,8 @@
 layout: default
 title: "Rsyslog"
 permalink: /22_rsyslog-guide/
+parent: "🔧 Службы"
+nav_order: 5
 ---
 
 # 🗂 Полное руководство по rsyslog

@@ -2,6 +2,8 @@
 layout: default
 title: "Версионный бэкап (cp, cron, rsync)"
 permalink: /02_cp_cron_rsync/
+parent: "📂 Файлы"
+nav_order: 1
 ---
 
 # 🗂 Версионное копирование файлов с помощью `cp` и `rsync`

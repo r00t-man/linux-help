@@ -2,6 +2,8 @@
 layout: default
 title: "Разблокировка администратора"
 permalink: /unlock_admin_astra/
+parent: "👯 Пользователи"
+nav_order: 3
 ---
 
 # Разблокировка администратора в Astra Linux

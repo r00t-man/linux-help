@@ -2,6 +2,8 @@
 layout: default
 title: "Поиск и просмотр файлов"
 permalink: /15_find_file/
+parent: "📂 Файлы"
+nav_order: 7
 ---
 
 # 🔍 Поиск и просмотр файлов в Linux

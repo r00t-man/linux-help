@@ -2,6 +2,8 @@
 layout: default
 title: "Пользователи и группы"
 permalink: /08_users/
+parent: "👯 Пользователи"
+nav_order: 1
 ---
 
 # 👤 Управление пользователями и группами в Linux

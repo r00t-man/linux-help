@@ -2,6 +2,8 @@
 layout: default
 title: "Journalctl - part 3"
 permalink: /21_2_journalctl-remote/
+parent: "🔧 Службы"
+nav_order: 4
 ---
 
 # 🌐 `journalctl` — Часть 3: Централизованный сбор журналов (`systemd-journal-remote`)

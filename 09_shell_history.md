@@ -2,6 +2,8 @@
 layout: default
 title: "История команд"
 permalink: /09_shell_history/
+parent: "⚙️ Логи/история — автоматизация"
+nav_order: 1
 ---
 
 # 📝 Настройка истории команд Bash

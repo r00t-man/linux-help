@@ -2,6 +2,8 @@
 layout: default
 title: "Systemd"
 permalink: /19_systemctl-guide/
+parent: "🔧 Службы"
+nav_order: 1
 ---
 
 # 🔧 Полный гайд по `systemctl` и unit-файлам (systemd)

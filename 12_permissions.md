@@ -2,6 +2,8 @@
 layout: default
 title: "Права доступа"
 permalink: /12_permissions/
+parent: "👯 Пользователи"
+nav_order: 2
 ---
 
 # 🔐 Управление правами доступа в Linux

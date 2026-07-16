@@ -2,6 +2,8 @@
 layout: default
 title: "Операции с директориями"
 permalink: /14_dir_operation/
+parent: "📂 Файлы"
+nav_order: 6
 ---
 
 # 📁 Работа с директориями в Linux

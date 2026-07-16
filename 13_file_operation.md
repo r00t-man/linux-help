@@ -2,6 +2,8 @@
 layout: default
 title: "Операции с файлами"
 permalink: /13_file_operation/
+parent: "📂 Файлы"
+nav_order: 5
 ---
 
 # 📂 Основные операции с файлами в Linux

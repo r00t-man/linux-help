@@ -2,6 +2,8 @@
 layout: default
 title: "Проверка аудита"
 permalink: /23_1_journalctl-audit-check/
+parent: "⚙️ Логи/история — автоматизация"
+nav_order: 3
 ---
 
 # 🧾 Проверка аудита журнала и контроля состояния journald

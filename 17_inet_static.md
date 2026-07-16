@@ -2,6 +2,8 @@
 layout: default
 title: "Статичные интерфейсы"
 permalink: /17_inet_static/
+parent: "🌐 Сети"
+nav_order: 4
 ---
 
 # 🌐 Гайд по созданию статичных названий сетевых интерфейсов

@@ -2,6 +2,8 @@
 layout: default
 title: "Journalctl - part 1"
 permalink: /21_journalctl-guide/
+parent: "🔧 Службы"
+nav_order: 2
 ---
 
 # 🗂 `journalctl` — исчерпывающий справочник

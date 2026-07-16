@@ -2,6 +2,8 @@
 layout: default
 title: "Временные метки"
 permalink: /07_file_timestamps/
+parent: "⏰ Время"
+nav_order: 2
 ---
 
 # ⏱ Временные метки файлов в Linux: atime, mtime, ctime
